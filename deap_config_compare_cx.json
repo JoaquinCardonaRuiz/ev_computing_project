@@ -1,0 +1,25 @@
+{
+  "experiments": [
+    {
+      "h_neurons": 10,
+      "experiment_name": "cx_comparison_1",
+      "population_size": 150,
+      "n_generations": 25,
+      "cx_probability": 0.5,
+      "cx_method": "cxTwoPoint",
+      "cx_kwargs": {},
+      "mut_probability": 0.1,
+      "mut_method": "mutGaussian",
+      "mut_kwargs": {
+        "mu": 0,
+        "sigma": 1,
+        "indpb": 0.1
+      },
+      "sel_method": "selTournament",
+      "sel_kwargs": {
+        "tournsize": 3
+      }
+    }
+  ]
+}
+
