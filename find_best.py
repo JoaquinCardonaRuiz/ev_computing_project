@@ -56,8 +56,21 @@ class Utils:
         with open(filename, "w") as f:
             json.dump(results, f)
 
+    def print_top_n_results(self, results, n):
+        sorted_results = sorted(
+            results.items(), key=lambda x: x[1]["avg_fitness"], reverse=True
+        )
+        for i in range(min(n, len(sorted_results))):
+            result = sorted_results[i]
+            print(f"Result {i+1}:")
+            for key in result[1]:
+                if key != "fitnesses":
+                    print(f"{key}: {result[1][key]}")
+            print()
+
 
 # Usage:
 utils = Utils(".", "crossover_exp_")
 results = utils.process_directories()
 utils.save_results(results, "results.json")
+utils.print_top_n_results(results, 10)
