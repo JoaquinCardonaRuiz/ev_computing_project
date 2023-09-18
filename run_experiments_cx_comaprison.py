@@ -7,7 +7,6 @@ import json
 import itertools
 
 from tqdm import tqdm
-import numpy as np
 
 # DEAP optimiser
 from deap_algorithm import DEAP_Optimiser
@@ -23,8 +22,8 @@ exp_template = config["experiments"][0]
 # Define the methods and their possible kwargs values
 methods = [
     # Working
-    # {"name": "cxOnePoint", "kwargs": {}},
-    # {"name": "cxTwoPoint", "kwargs": {}},
+    {"name": "cxOnePoint", "kwargs": {}},
+    {"name": "cxTwoPoint", "kwargs": {}},
     {"name": "cxUniform", "kwargs": {"indpb": list(np.arange(0.1, 1.0, 0.1))}},
     {"name": "cxBlend", "kwargs": {"alpha": list(np.arange(0.1, 1.0, 0.1))}},
     {"name": "cxSimulatedBinary", "kwargs": {"eta": list(range(1, 15, 1))}},
