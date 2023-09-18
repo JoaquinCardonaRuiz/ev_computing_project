@@ -72,5 +72,5 @@ class Utils:
 # Usage:
 utils = Utils(".", "crossover_exp_")
 results = utils.process_directories()
-utils.save_results(results, "results.json")
+utils.save_results(results, "results_crossover_methods_exp.json")
 utils.print_top_n_results(results, 10)
