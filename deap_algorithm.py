@@ -18,6 +18,7 @@ from deap import base, creator, tools
 from deap.tools.selection import __all__ as all_selections
 from deap.tools.mutation import __all__ as all_mutations
 from deap.tools.crossover import __all__ as all_crossovers
+from deap.tools.selection import selRandom
 
 # Evoman Imports
 from evoman.environment import Environment
@@ -46,7 +47,7 @@ def elitistRoulette(individuals, k, elitist_k, fit_attr="fitness"):
     s_inds = sorted(individuals, key=attrgetter(fit_attr), reverse=True)
     elitist_inds = s_inds[:elitist_k]
     s_inds = s_inds[elitist_k:]
-    sum_fits = sum(getattr(ind, fit_attr).values[0] for ind in individuals)
+    sum_fits = sum(getattr(ind, fit_attr).values[0] for ind in s_inds)
     chosen = elitist_inds
     for i in range(k-elitist_k):
         u = random.random() * sum_fits
@@ -56,6 +57,52 @@ def elitistRoulette(individuals, k, elitist_k, fit_attr="fitness"):
             if sum_ > u:
                 chosen.append(ind)
                 break
+    return chosen
+
+def selNonRepRandom(individuals, k):
+    """Select *k* individuals at random from the input *individuals* with
+    replacement. The list returned contains references to the input
+    *individuals*.
+
+    :param individuals: A list of individuals to select from.
+    :param k: The number of individuals to select.
+    :returns: A list of selected individuals.
+
+    This function uses the :func:`~random.choice` function from the
+    python base :mod:`random` module.
+    """
+    # Check that there are enough individuals to choose from
+    # Necessary because [:k] will return items even if there's less than k elements in array
+    #if len(individuals) < k: raise ValueError('Random: too few individuals for parameters specified.') 
+    indexes = np.random.permutation([i for i in range(len(individuals))])[:k]
+    return [individuals[i] for i in indexes]
+
+def selNonRepTournament(individuals, k, tournsize, fit_attr="fitness"):
+    """Select the best individual among *tournsize* randomly chosen
+    individuals, *k* times. The list returned contains
+    references to the input *individuals*.
+
+    :param individuals: A list of individuals to select from.
+    :param k: The number of individuals to select.
+    :param tournsize: The number of individuals participating in each tournament.
+    :param fit_attr: The attribute of individuals to use as selection criterion
+    :returns: A list of selected individuals.
+
+    This function uses the :func:`~random.choice` function from the python base
+    :mod:`random` module.
+    """
+    # Check that we won't run out of individuals to pick
+    #if len(individuals) - k < tournsize: raise ValueError('Tournament: too few individuals for parameters specified.') 
+    chosen = []
+    for i in range(k):
+        # remove individuals chosen from pool
+        aspirants = selNonRepRandom(individuals, tournsize)
+        chosen_one = max(aspirants, key=attrgetter(fit_attr))
+        chosen.append(chosen_one)
+        individuals.remove(chosen_one)
+    # add back individuals because otherwise they get removed from
+    # original population, because everything in deap is referential
+    individuals += chosen
     return chosen
 
 class DEAP_Optimiser():
@@ -113,6 +160,7 @@ class DEAP_Optimiser():
         mut_methods = {method_name:getattr(tools, method_name) for method_name in all_mutations}
         sel_methods = {method_name:getattr(tools, method_name) for method_name in all_selections}
         sel_methods['elitistRoulette'] = elitistRoulette
+        sel_methods['selNonRepTournament'] = selNonRepTournament
 
         creator.create("FitnessMax", base.Fitness, weights=(1.0,))
         creator.create("Individual", list, fitness=creator.FitnessMax)
@@ -122,7 +170,8 @@ class DEAP_Optimiser():
         toolbox.register("population", tools.initRepeat, list, toolbox.individual)
         toolbox.register("mate", cx_methods[self.config['cx_method']], **self.config['cx_kwargs'])
         toolbox.register("mutate", mut_methods[self.config['mut_method']], **self.config['mut_kwargs'])
-        toolbox.register("select", sel_methods[self.config['sel_method']], **self.config['sel_kwargs'])
+        toolbox.register("parent_select", sel_methods[self.config['parent_sel_method']], **self.config['parent_sel_kwargs'])
+        toolbox.register("survivor_select", sel_methods[self.config['survivor_sel_method']], **self.config['survivor_sel_kwargs'])
         toolbox.register("evaluate", self.evaluate)
         return toolbox
         
@@ -135,6 +184,40 @@ class DEAP_Optimiser():
         f,p,e,t = self.env.play(pcont=np.array(individual))
         return f
 
+    def crossover(self, parents):
+        """ Crossover subset of the population to generate offspring."""
+        children = []
+        for _ in range(self.config['children_per_parent']):
+            # We repeat the suffling, assigning partners and crossover process
+            # for every child we need per parent.
+            np.random.shuffle(parents)
+            for parent1, parent2 in zip(parents[::2], parents[1::2]):
+                child1, child2 = self.toolbox.clone(parent1), self.toolbox.clone(parent2)
+                self.toolbox.mate(child1, child2)
+                children += [child1, child2]
+                del child1.fitness.values
+                del child2.fitness.values
+        return children
+
+    def eval_offspring(self, offspring):
+        """Evaluate offpsring individuals.
+        
+        If any offpsring was present in previous generations, it will already
+        have a fitness, and therefore get skipped here.
+        """
+        # Evaluate the individuals with an invalid fitness
+        invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
+        fitnesses = map(self.toolbox.evaluate, invalid_ind)
+        for ind, fit in zip(invalid_ind, fitnesses):
+            ind.fitness.values = [fit]
+
+    def mutate(self, offspring):
+        """Mutate offspring individuals."""
+        for mutant in offspring:
+            if random.random() < self.config['mut_probability']:
+                self.toolbox.mutate(mutant)
+                del mutant.fitness.values
+
     def optimise(self):
         """ Train an algorithm to play EvoMan by using the DEAP framework.
         
@@ -143,45 +226,65 @@ class DEAP_Optimiser():
         as a result.
         """
         pop = self.toolbox.population(n=self.config['population_size'])
-
         # Evaluate the entire population
         fitnesses = map(self.toolbox.evaluate, pop)
         for ind, fit in zip(pop, fitnesses):
             ind.fitness.values = [fit]
 
         for g in range(self.config['n_generations']):
-            # Select the next generation individuals
-            offspring = self.toolbox.select(pop, len(pop))
-            # Clone the selected individuals
-            offspring = list(map(self.toolbox.clone, offspring))
-
-            # Apply crossover and mutation on the offspring
-            for child1, child2 in zip(offspring[::2], offspring[1::2]):
-                if random.random() < self.config['cx_probability']:
-                    self.toolbox.mate(child1, child2)
-                    del child1.fitness.values
-                    del child2.fitness.values
-
-            # Mutate individuals
-            for mutant in offspring:
-                if random.random() < self.config['mut_probability']:
-                    self.toolbox.mutate(mutant)
-                    del mutant.fitness.values
-
-            # Evaluate the individuals with an invalid fitness
-            invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-            fitnesses = map(self.toolbox.evaluate, invalid_ind)
-            for ind, fit in zip(invalid_ind, fitnesses):
-                ind.fitness.values = [fit]
-
-            # The population is entirely replaced by the offspring
-            pop[:] = offspring
             self.log_gen(g, [ind.fitness.values[0] for ind in pop])
-        return pop
 
-    def log_gen(self, n_gen, historical_results):
-        print(f'Mean Fitness for Generation {n_gen}: {np.mean(historical_results)}.')
+            # Parent selection | Note: select generates references to the individuals in pop.
+            # To have all parents reproduce, select a 'parents' parameter equal to population
+            # size, and a non-replacing selection method.
+            parents_to_reproduce = self.toolbox.parent_select(pop, self.config['parents'])
+
+            # Get offspring
+            offspring = self.crossover(parents_to_reproduce)
+
+            # Mutate and reevaluate
+            self.mutate(offspring)
+            self.eval_offspring(offspring)
+
+            # Only delete references created by select, not actual parents. 
+            # The parents still live in pop.
+            del parents_to_reproduce
+            
+            if self.config['mode'] == 'steady':
+                offspring = pop + offspring
+            
+            # We no longer need old population. If mode is generational, it's irrelevant.
+            # If mode is steady-state, we already added it to the offspring population.
+            del pop
+
+            if len(offspring) < self.config['population_size']:
+                # If this happens, it's because the mode was generational and the number of children
+                # per parent was too low to replace population.
+                raise ValueError('Optimise: parents produced too few offspring, parameters not valid.')
+            
+            # Survivor selection | Note: select generates references to the individuals in offspring.
+            # To have all children survive, choose non-replacing selection method
+            pop = self.toolbox.survivor_select(offspring, self.config['population_size'])
+            del offspring
+        self.log_run(pop)
+
+
+    def log_gen(self, n_gen, fitnesses):
+        """Log fitnesses for current generation in disk."""
+        print(f'Mean Fitness for Generation {n_gen}: {np.mean(fitnesses)}.')
         with open(f'./{self.config["experiment_name"]}/fitnesses.json', 'a') as out_file:
-            out_file.write(json.dumps({'generation':n_gen, 'fitnesses': historical_results}))
+            out_file.write(json.dumps({'generation':n_gen, 'fitnesses': fitnesses}))
+            out_file.write("\n")
+
+    def log_run(self, pop):
+        print(f'====== Experiment {self.config["experiment_name"]} Finished ======')
+        fitnesses = [ind.fitness.values[0] for ind in pop]
+        mean, mx, std = np.mean(fitnesses), np.max(fitnesses), np.std(fitnesses)
+        best_ind = max(pop, key=attrgetter('fitness'))
+        print(f'Resulting Mean Fitness: {mean}.')
+        print(f'Resulting Max Fitness:  {mx}.')
+        print(f'Resulting Std Fitness:  {std}.')
+        with open(f'./{self.config["experiment_name"]}/results.json', 'a') as out_file:
+            out_file.write(json.dumps({'mean':mean, 'max': mx, 'std': std, 'best': list(best_ind), 'config': self.config},indent=4))
             out_file.write("\n")
 
