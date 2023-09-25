@@ -20,7 +20,7 @@ from deap_algorithm import DEAP_Optimiser
 
 # Test DEAP
 config = ""
-with open("deap_config_compare_cx.json") as json_file:
+with open("deap_config.json") as json_file:
     config = json.loads(json_file.read())
 
 exp_template = config["experiments"][0]
@@ -29,10 +29,10 @@ exp_template = config["experiments"][0]
 methods = [
     # Working
     {"name": "cxOnePoint", "kwargs": {}},
-    # {"name": "cxTwoPoint", "kwargs": {}},
-    # {"name": "cxUniform", "kwargs": {"indpb": list(np.arange(0.1, 1.0, 0.1))}},
-    # {"name": "cxBlend", "kwargs": {"alpha": list(np.arange(0.1, 1.0, 0.1))}},
-    # {"name": "cxSimulatedBinary", "kwargs": {"eta": list(range(1, 15, 1))}},
+    {"name": "cxTwoPoint", "kwargs": {}},
+    {"name": "cxUniform", "kwargs": {"indpb": list(np.arange(0.1, 1.0, 0.1))}},
+    {"name": "cxBlend", "kwargs": {"alpha": list(np.arange(0.1, 1.0, 0.1))}},
+    {"name": "cxSimulatedBinary", "kwargs": {"eta": list(range(1, 15, 1))}},
     # maybe works, dunno low and up
     # {"name": "cxSimulatedBinaryBounded", "kwargs":{"eta": 15.0, "low": [], "up": []}},
     # Not working
@@ -89,12 +89,6 @@ for method in methods:
 
         # Update the progress bar
         pbar.update()
-
-start_dir = "."
-result_filename = "results_crossover_methods_exp.json"
-results = process_prefixed_dirs(start_dir, prefix)
-save_sorted_results(results, result_filename)
-print_top_n_results_from_file(result_filename, 10)
 
 # Close the progress bar
 pbar.close()

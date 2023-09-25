@@ -1,7 +1,7 @@
 {"experiments": [
     {
         "experiment_name": "deap_n_1",
-        "comment": "",
+        "comment": "Crossover methods experiment",
         "h_neurons": 20,
         "population_size": 1000,
         "n_generations": 150,
