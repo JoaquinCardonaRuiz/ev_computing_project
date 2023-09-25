@@ -1,18 +1,18 @@
 {"experiments": [
     {
-        "experiment_name": "deap_n_1",
-        "comment": "",
+        "experiment_name": "no_fit_sharing",
+        "comment": "Our test for generational with speciation",
         "h_neurons": 20,
-        "population_size": 1000,
-        "n_generations": 150,
-        "parents": 250,
+        "population_size": 100,
+        "n_generations": 50,
+        "parents": 50,
         "children_per_parent": 2,
-        "mode": "steady",
+        "mode": "generational",
         
         "cx_method": "cxTwoPoint",
         "cx_kwargs": {},
         
-        "mut_probability": 0.15,
+        "mut_probability": 0.1,
         "mut_method": "mutGaussian",
         "mut_kwargs": {"mu": 0, "sigma": 1, "indpb": 0.1},
 
@@ -20,6 +20,10 @@
         "parent_sel_kwargs": {"tournsize": 5},
 
         "survivor_sel_method": "selNonRepTournament",
-        "survivor_sel_kwargs": {"tournsize": 5}
+        "survivor_sel_kwargs": {"tournsize": 5},
+        
+        "do_fitshare": true,
+        "fitshare_radius": 12,
+        "fitshare_strength": 2
     }
 ]}

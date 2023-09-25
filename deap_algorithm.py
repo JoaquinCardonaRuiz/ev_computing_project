@@ -9,9 +9,12 @@ The configuration JSON strings determines whether the algorithm returns or logs 
 # Built-in imports
 import os
 import json
+import scipy
 import random
 import numpy as np
 from operator import attrgetter
+from matplotlib import pyplot as plt
+from datetime import datetime
 
 # DEAP imports
 from deap import base, creator, tools
@@ -77,7 +80,7 @@ def selNonRepRandom(individuals, k):
     indexes = np.random.permutation([i for i in range(len(individuals))])[:k]
     return [individuals[i] for i in indexes]
 
-def selNonRepTournament(individuals, k, tournsize, fit_attr="fitness"):
+def selNonRepTournament(individuals, k, tournsize):
     """Select the best individual among *tournsize* randomly chosen
     individuals, *k* times. The list returned contains
     references to the input *individuals*.
@@ -96,10 +99,10 @@ def selNonRepTournament(individuals, k, tournsize, fit_attr="fitness"):
     chosen = []
     for i in range(k):
         # remove individuals chosen from pool
-        aspirants = selNonRepRandom(individuals, tournsize)
-        chosen_one = max(aspirants, key=attrgetter(fit_attr))
-        chosen.append(chosen_one)
-        individuals.remove(chosen_one)
+        aspirants = np.random.permutation([i for i in range(len(individuals))])[:tournsize]
+        chosen_one = max(aspirants, key=lambda x: individuals[x].fitness.values[0])
+        chosen.append(individuals[chosen_one])
+        del individuals[chosen_one]
     # add back individuals because otherwise they get removed from
     # original population, because everything in deap is referential
     individuals += chosen
@@ -172,8 +175,24 @@ class DEAP_Optimiser():
         toolbox.register("mutate", mut_methods[self.config['mut_method']], **self.config['mut_kwargs'])
         toolbox.register("parent_select", sel_methods[self.config['parent_sel_method']], **self.config['parent_sel_kwargs'])
         toolbox.register("survivor_select", sel_methods[self.config['survivor_sel_method']], **self.config['survivor_sel_kwargs'])
+        toolbox.register("fitness_sharing", self.fitness_sharing)
         toolbox.register("evaluate", self.evaluate)
         return toolbox
+    
+    def check_repeats(self, population, where):
+        ids = [id(ind) for ind in population]
+        vals = [list(ind) for ind in population]
+        id_reps = any(ids.count(x) > 1 for x in ids)
+        val_reps = any(vals.count(x) > 1 for x in vals)
+        if id_reps and val_reps:
+            print(f'{where}: Repeat by ids and vals!')
+            _ = input('continue?')
+        elif id_reps:
+            print(f'{where}: Repeat ids only!')
+            _ = input('continue?')
+        elif val_reps:
+            print(f'{where}: Repeat vals only!')
+            _ = input('continue?')
         
     def evaluate(self, individual):
         """ Run EvoMan and return fitness of individual.
@@ -215,8 +234,73 @@ class DEAP_Optimiser():
         """Mutate offspring individuals."""
         for mutant in offspring:
             if random.random() < self.config['mut_probability']:
+                old_mut = list(mutant)
                 self.toolbox.mutate(mutant)
                 del mutant.fitness.values
+
+    def fitness_sharing(self, pop):
+        """ Implements Fitness Sharing to preserve diversity in population.
+
+        Individuals that are grouped very close together (according to either 
+        hamming or ecluidian distance) get a penalty to their fitness, inversely
+        proportional to their previous fitness value.
+
+        This encourages diversity by promoting less common niches, and helps in
+        avoiding local optima.
+
+        Light on mem usage but very slow.
+        """
+        # For each pairwise combination of individuals
+        for individual in pop:
+            denominator = 1
+            for neighbour in pop:
+                if id(individual) == id(neighbour):
+                    continue
+                # Calculate the distance
+                distance = scipy.spatial.distance.hamming(individual, neighbour)*self.tot_neurons
+                # If the neighbour is near enough the individual, we add one (minus a small strength factor) to the denominator
+                if distance < self.config['fitshare_radius']:
+                    denominator += 1-(distance/self.config['fitshare_radius'])**self.config['fitshare_strength']
+            # Update the fitnesses
+            individual.fitness.values = [individual.fitness.values[0] / denominator]
+
+    def fitness_sharing_np(self, pop):
+        """ Implements Fitness Sharing to preserve diversity in population
+
+        Uses NumPy to calculate distances between networks. This is pretty
+        bad code but it's the only way I managed to make it performant. 
+
+        Applies the Frobenius matrix norm to the weights of the population
+        to calculate distances and uses map operations to calculate new 
+        fitness sharing factors.
+
+        See https://en.wikipedia.org/wiki/Matrix_norm#Frobenius_norm
+
+        Fast(er) but very mem intensive.
+        """
+        # We use float16 to save memory. The first operation in this algorithm
+        # involves creating a 3D matrix of size pop_size X pop_size X neurons
+        # which can balloon to thousands of gigabytes if not careful
+        weights = np.array([np.array(ind) for ind in pop],dtype=np.float16)
+        fitnesses = np.array([ind.fitness.values[0] for ind in pop],dtype=np.float16)
+
+        # Get pairwise individual x individual distances using Frobenius norm
+        dist_matrix = np.linalg.norm(weights[:, None, :] - weights[None, :, :], axis=-1)
+        print(dist_matrix)
+        # Get boolean matrix with elements inside the radius
+        cond_matrix = dist_matrix <= self.config['fitshare_radius']
+        # Include strength factor
+        den_factors = cond_matrix * (1 - (np.power((dist_matrix/ self.config['fitshare_radius']),self.config['fitshare_strength'])))
+        # Clear memory
+        del dist_matrix, cond_matrix, weights
+        # Sum up denominators
+        denominators = np.sum(den_factors, axis=1)
+        print(denominators)
+        # Get resulting fitnesses
+        r_fitnesses = fitnesses/denominators
+        # Assign new fitnesses
+        for i in range(len(pop)):
+            pop[i].fitness.values = [r_fitnesses[i]]
 
     def optimise(self):
         """ Train an algorithm to play EvoMan by using the DEAP framework.
@@ -231,8 +315,15 @@ class DEAP_Optimiser():
         for ind, fit in zip(pop, fitnesses):
             ind.fitness.values = [fit]
 
+        now  = datetime.now()                         # Now
         for g in range(self.config['n_generations']):
+            if g > 0:
+                old_time = now
+                now = datetime.now()
+                print(f'Gen time: {(now-old_time).total_seconds()}s')
+                
             self.log_gen(g, [ind.fitness.values[0] for ind in pop])
+            self.check_repeats(pop, 'opt_start')
 
             # Parent selection | Note: select generates references to the individuals in pop.
             # To have all parents reproduce, select a 'parents' parameter equal to population
@@ -245,6 +336,8 @@ class DEAP_Optimiser():
             # Mutate and reevaluate
             self.mutate(offspring)
             self.eval_offspring(offspring)
+            if self.config['do_fitshare']:
+                self.fitness_sharing_np(offspring)
 
             # Only delete references created by select, not actual parents. 
             # The parents still live in pop.
@@ -252,7 +345,7 @@ class DEAP_Optimiser():
             
             if self.config['mode'] == 'steady':
                 offspring = pop + offspring
-            
+
             # We no longer need old population. If mode is generational, it's irrelevant.
             # If mode is steady-state, we already added it to the offspring population.
             del pop
@@ -260,7 +353,7 @@ class DEAP_Optimiser():
             if len(offspring) < self.config['population_size']:
                 # If this happens, it's because the mode was generational and the number of children
                 # per parent was too low to replace population.
-                raise ValueError('Optimise: parents produced too few offspring, parameters not valid.')
+                raise ValueError(f'Optimise: parents produced too few offspring ({len(offspring)}/{self.config["population_size"]}), parameters not valid.')
             
             # Survivor selection | Note: select generates references to the individuals in offspring.
             # To have all children survive, choose non-replacing selection method
@@ -287,4 +380,6 @@ class DEAP_Optimiser():
         with open(f'./{self.config["experiment_name"]}/results.json', 'a') as out_file:
             out_file.write(json.dumps({'mean':mean, 'max': mx, 'std': std, 'best': list(best_ind), 'config': self.config},indent=4))
             out_file.write("\n")
+
+
 
