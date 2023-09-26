@@ -305,7 +305,6 @@ class DEAP_Optimiser():
                 print(f'Gen time: {(now-old_time).total_seconds()}s')
                 
             self.log_gen(g, [ind.fitness.values[0] for ind in pop])
-            self.check_repeats(pop, 'opt_start')
 
             # Parent selection | Note: select generates references to the individuals in pop.
             # To have all parents reproduce, select a 'parents' parameter equal to population
