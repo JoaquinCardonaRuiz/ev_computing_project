@@ -2,10 +2,10 @@
     {
         "experiment_name": "no_fit_sharing",
         "comment": "Our test for generational with speciation",
-        "h_neurons": 20,
-        "population_size": 100,
+        "h_neurons": 10,
+        "population_size": 500,
         "n_generations": 50,
-        "parents": 50,
+        "parents": 250,
         "children_per_parent": 2,
         "mode": "generational",
         
@@ -23,6 +23,35 @@
         "survivor_sel_kwargs": {"tournsize": 5},
         
         "do_fitshare": true,
+        "dist_func": "euclidean",
+        "fitshare_radius": 12,
+        "fitshare_strength": 2
+    },
+    {
+        "experiment_name": "no_fit_sharing",
+        "comment": "Our test for generational with speciation",
+        "h_neurons": 10,
+        "population_size": 500,
+        "n_generations": 50,
+        "parents": 250,
+        "children_per_parent": 2,
+        "mode": "generational",
+        
+        "cx_method": "cxTwoPoint",
+        "cx_kwargs": {},
+        
+        "mut_probability": 0.1,
+        "mut_method": "mutGaussian",
+        "mut_kwargs": {"mu": 0, "sigma": 1, "indpb": 0.1},
+
+        "parent_sel_method": "selNonRepTournament",
+        "parent_sel_kwargs": {"tournsize": 5},
+
+        "survivor_sel_method": "selNonRepTournament",
+        "survivor_sel_kwargs": {"tournsize": 5},
+        
+        "do_fitshare": true,
+        "dist_func": "euclidean",
         "fitshare_radius": 12,
         "fitshare_strength": 2
     }

@@ -7,6 +7,7 @@ with a JSON config string before the 'optimise' method can be called to run the 
 The configuration JSON strings determines whether the algorithm returns or logs its results.
 """
 # Built-in imports
+import gc
 import os
 import json
 import scipy
@@ -103,6 +104,7 @@ def selNonRepTournament(individuals, k, tournsize):
         chosen_one = max(aspirants, key=lambda x: individuals[x].fitness.values[0])
         chosen.append(individuals[chosen_one])
         del individuals[chosen_one]
+        gc.collect()
     # add back individuals because otherwise they get removed from
     # original population, because everything in deap is referential
     individuals += chosen
@@ -175,7 +177,7 @@ class DEAP_Optimiser():
         toolbox.register("mutate", mut_methods[self.config['mut_method']], **self.config['mut_kwargs'])
         toolbox.register("parent_select", sel_methods[self.config['parent_sel_method']], **self.config['parent_sel_kwargs'])
         toolbox.register("survivor_select", sel_methods[self.config['survivor_sel_method']], **self.config['survivor_sel_kwargs'])
-        toolbox.register("fitness_sharing", self.fitness_sharing)
+        toolbox.register("fitness_sharing", self.fitness_sharing_np)
         toolbox.register("evaluate", self.evaluate)
         return toolbox
     
@@ -216,6 +218,7 @@ class DEAP_Optimiser():
                 children += [child1, child2]
                 del child1.fitness.values
                 del child2.fitness.values
+                gc.collect()
         return children
 
     def eval_offspring(self, offspring):
@@ -234,35 +237,10 @@ class DEAP_Optimiser():
         """Mutate offspring individuals."""
         for mutant in offspring:
             if random.random() < self.config['mut_probability']:
-                old_mut = list(mutant)
                 self.toolbox.mutate(mutant)
                 del mutant.fitness.values
+                gc.collect()
 
-    def fitness_sharing(self, pop):
-        """ Implements Fitness Sharing to preserve diversity in population.
-
-        Individuals that are grouped very close together (according to either 
-        hamming or ecluidian distance) get a penalty to their fitness, inversely
-        proportional to their previous fitness value.
-
-        This encourages diversity by promoting less common niches, and helps in
-        avoiding local optima.
-
-        Light on mem usage but very slow.
-        """
-        # For each pairwise combination of individuals
-        for individual in pop:
-            denominator = 1
-            for neighbour in pop:
-                if id(individual) == id(neighbour):
-                    continue
-                # Calculate the distance
-                distance = scipy.spatial.distance.hamming(individual, neighbour)*self.tot_neurons
-                # If the neighbour is near enough the individual, we add one (minus a small strength factor) to the denominator
-                if distance < self.config['fitshare_radius']:
-                    denominator += 1-(distance/self.config['fitshare_radius'])**self.config['fitshare_strength']
-            # Update the fitnesses
-            individual.fitness.values = [individual.fitness.values[0] / denominator]
 
     def fitness_sharing_np(self, pop):
         """ Implements Fitness Sharing to preserve diversity in population
@@ -284,18 +262,22 @@ class DEAP_Optimiser():
         weights = np.array([np.array(ind) for ind in pop],dtype=np.float16)
         fitnesses = np.array([ind.fitness.values[0] for ind in pop],dtype=np.float16)
 
-        # Get pairwise individual x individual distances using Frobenius norm
-        dist_matrix = np.linalg.norm(weights[:, None, :] - weights[None, :, :], axis=-1)
-        print(dist_matrix)
+        if self.config['dist_func'] == 'euclidean':
+            # Get pairwise individual x individual distances using Frobenius norm
+            dist_matrix = np.linalg.norm(weights[:, None, :] - weights[None, :, :], axis=-1)
+        elif self.config['dist_func'] == 'hamming':
+            dist_matrix = scipy.spatial.distance.pdist(weights, metric="hamming")
+            dist_matrix = scipy.spatial.distance.squareform(dist_matrix)*self.tot_neurons
+
         # Get boolean matrix with elements inside the radius
         cond_matrix = dist_matrix <= self.config['fitshare_radius']
         # Include strength factor
         den_factors = cond_matrix * (1 - (np.power((dist_matrix/ self.config['fitshare_radius']),self.config['fitshare_strength'])))
         # Clear memory
         del dist_matrix, cond_matrix, weights
+        gc.collect()
         # Sum up denominators
         denominators = np.sum(den_factors, axis=1)
-        print(denominators)
         # Get resulting fitnesses
         r_fitnesses = fitnesses/denominators
         # Assign new fitnesses
@@ -315,7 +297,7 @@ class DEAP_Optimiser():
         for ind, fit in zip(pop, fitnesses):
             ind.fitness.values = [fit]
 
-        now  = datetime.now()                         # Now
+        now  = datetime.now()
         for g in range(self.config['n_generations']):
             if g > 0:
                 old_time = now
@@ -337,7 +319,7 @@ class DEAP_Optimiser():
             self.mutate(offspring)
             self.eval_offspring(offspring)
             if self.config['do_fitshare']:
-                self.fitness_sharing_np(offspring)
+                self.toolbox.fitness_sharing(offspring)
 
             # Only delete references created by select, not actual parents. 
             # The parents still live in pop.
@@ -359,6 +341,7 @@ class DEAP_Optimiser():
             # To have all children survive, choose non-replacing selection method
             pop = self.toolbox.survivor_select(offspring, self.config['population_size'])
             del offspring
+            gc.collect()
         self.log_run(pop)
 
 
