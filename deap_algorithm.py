@@ -346,7 +346,6 @@ class DEAP_Optimiser:
             del offspring
             gc.collect()
         self.log_run(pop)
-        return np.max(fitnesses)
 
     def log_gen(self, n_gen, fitnesses):
         """Log fitnesses for current generation in disk."""

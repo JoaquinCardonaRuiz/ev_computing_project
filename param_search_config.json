@@ -1,37 +1,58 @@
 {
-    "experiment_name": "test_experiment",
-    "comment": "This is a test experiment",
-    "h_neurons": 20,
-    "h_neurons_bounds": [10, 30],
-    "population_size": 100,
-    "population_size_bounds": [50, 150],
-    "n_generations": 50,
-    "n_generations_bounds": [10, 100],
-    "parents": 50,
-    "parents_bounds": [10, 100],
-    "children_per_parent": 2,
-    "children_per_parent_bounds": [1, 5],
-    "mode": "generational",
-    
-    "cx_method": "cxTwoPoint",
-    "cx_kwargs": {},
-    
-    "mut_probability": 0.1,
-    "mut_probability_bounds": [0.0, 1.0],
-    "mut_method": "mutGaussian",
-    "mut_kwargs": {},
-    
-    "parent_sel_method": "selNonRepTournament",
-    "parent_sel_kwargs": {},
-    "survivor_sel_method": "selNonRepTournament",
-    "survivor_sel_kwargs": {},
-    
-    "do_fitshare": true,
-    
-    "fitshare_radius": 12,
-    "fitshare_radius_bounds": [1, 20],
-    
-    "fitshare_strength": 2,
-    "fitshare_strength_bounds": [1, 5]
+  "experiment_name": "test_experiment",
+  "comment": "This is a test experiment",
+  "h_neurons": 20,
+  "h_neurons_bounds": [
+    10,
+    30
+  ],
+  "population_size": 100,
+  "population_size_bounds": [
+    50,
+    150
+  ],
+  "n_generations": 50,
+  "n_generations_bounds": [
+    10,
+    100
+  ],
+  "parents": 50,
+  "parents_bounds": [
+    10,
+    100
+  ],
+  "children_per_parent": 2,
+  "children_per_parent_bounds": [
+    1,
+    5
+  ],
+  "mode": "generational",
+  "cx_method": "cxTwoPoint",
+  "cx_kwargs": {},
+  "mut_probability": 0.1,
+  "mut_probability_bounds": [
+    0.0,
+    1.0
+  ],
+  "mut_method": "mutGaussian",
+  "mut_kwargs": {},
+  "parent_sel_method": "selNonRepTournament",
+  "parent_sel_kwargs": {
+    "tournsize": 5
+  },
+  "survivor_sel_method": "selNonRepTournament",
+  "survivor_sel_kwargs": {
+    "tournsize": 5
+  },
+  "do_fitshare": false,
+  "fitshare_radius": 12,
+  "fitshare_radius_bounds": [
+    1,
+    20
+  ],
+  "fitshare_strength": 2,
+  "fitshare_strength_bounds": [
+    1,
+    5
+  ]
 }
-

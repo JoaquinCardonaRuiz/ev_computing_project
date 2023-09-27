@@ -13,7 +13,10 @@ def objective_function(x, config_keys, config):
 
     # Update the config_copy dictionary with the parameters from x
     for i, key in enumerate(config_keys):
-        config_copy[key] = x[i]
+        if i <= 12:  # Only change values from the 12th index on
+            config_copy[key] = int(x[i])
+        else:
+            config_copy[key] = x[i]
 
     # Create a DEAP_Optimiser object and run the optimise method
     optimiser = DEAP_Optimiser(config_copy)
