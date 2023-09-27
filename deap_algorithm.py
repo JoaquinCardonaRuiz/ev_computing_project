@@ -23,66 +23,11 @@ from deap import base, creator, tools
 from deap.tools.selection import __all__ as all_selections
 from deap.tools.mutation import __all__ as all_mutations
 from deap.tools.crossover import __all__ as all_crossovers
-from deap.tools.selection import selRandom
 
 # Evoman Imports
 from evoman.environment import Environment
 from demo_controller import player_controller
 
-
-def elitistRoulette(individuals, k, elitist_k, fit_attr="fitness"):
-    """Select *k* individuals from the input *individuals* using *k*
-    spins of a roulette, and deterministically selecting the elitist_k best.
-    The selection is made by looking only at the first fitness value of each individual.
-    The list returned contains references to the input *individuals*.
-
-    :param individuals: A list of individuals to select from.
-    :param k: The number of individuals to select.
-    :param elitist_k: The number of individuals of the top of the fitness list that get
-        deterministically selected.
-    :param fit_attr: The attribute of individuals to use as selection criterion
-    :returns: A list of selected individuals.
-
-    This function uses the :func:`~random.random` function from the python base
-    :mod:`random` module.
-
-    .. warning::
-       The roulette selection by definition cannot be used for minimization
-       or when the fitness can be smaller or equal to 0.
-    """
-    s_inds = sorted(individuals, key=attrgetter(fit_attr), reverse=True)
-    elitist_inds = s_inds[:elitist_k]
-    s_inds = s_inds[elitist_k:]
-    sum_fits = sum(getattr(ind, fit_attr).values[0] for ind in s_inds)
-    chosen = elitist_inds
-    for i in range(k - elitist_k):
-        u = random.random() * sum_fits
-        sum_ = 0
-        for ind in s_inds:
-            sum_ += getattr(ind, fit_attr).values[0]
-            if sum_ > u:
-                chosen.append(ind)
-                break
-    return chosen
-
-
-def selNonRepRandom(individuals, k):
-    """Select *k* individuals at random from the input *individuals* with
-    replacement. The list returned contains references to the input
-    *individuals*.
-
-    :param individuals: A list of individuals to select from.
-    :param k: The number of individuals to select.
-    :returns: A list of selected individuals.
-
-    This function uses the :func:`~random.choice` function from the
-    python base :mod:`random` module.
-    """
-    # Check that there are enough individuals to choose from
-    # Necessary because [:k] will return items even if there's less than k elements in array
-    # if len(individuals) < k: raise ValueError('Random: too few individuals for parameters specified.')
-    indexes = np.random.permutation([i for i in range(len(individuals))])[:k]
-    return [individuals[i] for i in indexes]
 
 
 def selNonRepTournament(individuals, k, tournsize):
@@ -110,6 +55,7 @@ def selNonRepTournament(individuals, k, tournsize):
         chosen_one = max(aspirants, key=lambda x: individuals[x].fitness.values[0])
         chosen.append(individuals[chosen_one])
         del individuals[chosen_one]
+        gc.collect()
     # add back individuals because otherwise they get removed from
     # original population, because everything in deap is referential
     individuals += chosen
@@ -172,48 +118,23 @@ class DEAP_Optimiser:
         """Initialises DEAP framework with specified parameters."""
         toolbox = base.Toolbox()
 
-        cx_methods = {
-            method_name: getattr(tools, method_name) for method_name in all_crossovers
-        }
-        mut_methods = {
-            method_name: getattr(tools, method_name) for method_name in all_mutations
-        }
-        sel_methods = {
-            method_name: getattr(tools, method_name) for method_name in all_selections
-        }
-        sel_methods["elitistRoulette"] = elitistRoulette
-        sel_methods["selNonRepTournament"] = selNonRepTournament
+        cx_methods =  {method_name:getattr(tools, method_name) for method_name in all_crossovers}
+        mut_methods = {method_name:getattr(tools, method_name) for method_name in all_mutations}
+        sel_methods = {method_name:getattr(tools, method_name) for method_name in all_selections}
+        sel_methods['selNonRepTournament'] = selNonRepTournament
 
         creator.create("FitnessMax", base.Fitness, weights=(1.0,))
-        creator.create("Individual", list, fitness=creator.FitnessMax)
-        toolbox.register("attr_float", np.random.uniform, -1, 1)
-        toolbox.register(
-            "individual",
-            tools.initRepeat,
-            creator.Individual,
-            toolbox.attr_float,
-            n=self.tot_neurons,
-        )
+        creator.create("Individual", list, fitness=creator.FitnessMax, 
+                                           non_adj_fitness=creator.FitnessMax)
+        toolbox.register("attr_float", np.random.uniform,-1,1)
+        toolbox.register("individual", tools.initRepeat, creator.Individual, 
+                              toolbox.attr_float, n=self.tot_neurons)
         toolbox.register("population", tools.initRepeat, list, toolbox.individual)
-        toolbox.register(
-            "mate", cx_methods[self.config["cx_method"]], **self.config["cx_kwargs"]
-        )
-        toolbox.register(
-            "mutate",
-            mut_methods[self.config["mut_method"]],
-            **self.config["mut_kwargs"],
-        )
-        toolbox.register(
-            "parent_select",
-            sel_methods[self.config["parent_sel_method"]],
-            **self.config["parent_sel_kwargs"],
-        )
-        toolbox.register(
-            "survivor_select",
-            sel_methods[self.config["survivor_sel_method"]],
-            **self.config["survivor_sel_kwargs"],
-        )
-        toolbox.register("fitness_sharing", self.fitness_sharing)
+        toolbox.register("mate", cx_methods[self.config['cx_method']], **self.config['cx_kwargs'])
+        toolbox.register("mutate", mut_methods[self.config['mut_method']], **self.config['mut_kwargs'])
+        toolbox.register("parent_select", sel_methods[self.config['parent_sel_method']], **self.config['parent_sel_kwargs'])
+        toolbox.register("survivor_select", sel_methods[self.config['survivor_sel_method']], **self.config['survivor_sel_kwargs'])
+        toolbox.register("fitness_sharing", self.fitness_sharing_np)
         toolbox.register("evaluate", self.evaluate)
         return toolbox
 
@@ -256,6 +177,7 @@ class DEAP_Optimiser:
                 children += [child1, child2]
                 del child1.fitness.values
                 del child2.fitness.values
+                gc.collect()
         return children
 
     def eval_offspring(self, offspring):
@@ -269,47 +191,16 @@ class DEAP_Optimiser:
         fitnesses = map(self.toolbox.evaluate, invalid_ind)
         for ind, fit in zip(invalid_ind, fitnesses):
             ind.fitness.values = [fit]
+            ind.non_adj_fitness = [fit]
 
     def mutate(self, offspring):
         """Mutate offspring individuals."""
         for mutant in offspring:
-            if random.random() < self.config["mut_probability"]:
-                old_mut = list(mutant)
+            if random.random() < self.config['mut_probability']:
                 self.toolbox.mutate(mutant)
                 del mutant.fitness.values
+                gc.collect()
 
-    def fitness_sharing(self, pop):
-        """Implements Fitness Sharing to preserve diversity in population.
-
-        Individuals that are grouped very close together (according to either
-        hamming or ecluidian distance) get a penalty to their fitness, inversely
-        proportional to their previous fitness value.
-
-        This encourages diversity by promoting less common niches, and helps in
-        avoiding local optima.
-
-        Light on mem usage but very slow.
-        """
-        # For each pairwise combination of individuals
-        for individual in pop:
-            denominator = 1
-            for neighbour in pop:
-                if id(individual) == id(neighbour):
-                    continue
-                # Calculate the distance
-                distance = (
-                    scipy.spatial.distance.hamming(individual, neighbour)
-                    * self.tot_neurons
-                )
-                # If the neighbour is near enough the individual, we add one (minus a small strength factor) to the denominator
-                if distance < self.config["fitshare_radius"]:
-                    denominator += (
-                        1
-                        - (distance / self.config["fitshare_radius"])
-                        ** self.config["fitshare_strength"]
-                    )
-            # Update the fitnesses
-            individual.fitness.values = [individual.fitness.values[0] / denominator]
 
     def fitness_sharing_np(self, pop):
         """Implements Fitness Sharing to preserve diversity in population
@@ -331,9 +222,13 @@ class DEAP_Optimiser:
         weights = np.array([np.array(ind) for ind in pop], dtype=np.float16)
         fitnesses = np.array([ind.fitness.values[0] for ind in pop], dtype=np.float16)
 
-        # Get pairwise individual x individual distances using Frobenius norm
-        dist_matrix = np.linalg.norm(weights[:, None, :] - weights[None, :, :], axis=-1)
-        print(dist_matrix)
+        if self.config['dist_func'] == 'euclidean':
+            # Get pairwise individual x individual distances using Frobenius norm
+            dist_matrix = np.linalg.norm(weights[:, None, :] - weights[None, :, :], axis=-1)
+        elif self.config['dist_func'] == 'hamming':
+            dist_matrix = scipy.spatial.distance.pdist(weights, metric="hamming")
+            dist_matrix = scipy.spatial.distance.squareform(dist_matrix)*self.tot_neurons
+
         # Get boolean matrix with elements inside the radius
         cond_matrix = dist_matrix <= self.config["fitshare_radius"]
         # Include strength factor
@@ -348,9 +243,9 @@ class DEAP_Optimiser:
         )
         # Clear memory
         del dist_matrix, cond_matrix, weights
+        gc.collect()
         # Sum up denominators
         denominators = np.sum(den_factors, axis=1)
-        print(denominators)
         # Get resulting fitnesses
         r_fitnesses = fitnesses / denominators
         # Assign new fitnesses
@@ -487,16 +382,16 @@ class DEAP_Optimiser:
         fitnesses = map(self.toolbox.evaluate, pop)
         for ind, fit in zip(pop, fitnesses):
             ind.fitness.values = [fit]
+            ind.non_adj_fitness.values = [fit]
 
-        now = datetime.now()  # Now
-        for g in range(self.config["n_generations"]):
+        now  = datetime.now()
+        for g in range(self.config['n_generations']):
             if g > 0:
                 old_time = now
                 now = datetime.now()
-                print(f"Gen time: {(now-old_time).total_seconds()}s")
-
-            self.log_gen(g, [ind.fitness.values[0] for ind in pop])
-            self.check_repeats(pop, "opt_start")
+                print(f'Gen time: {(now-old_time).total_seconds()}s')
+                
+            self.log_gen(g, [ind.non_adj_fitness.values[0] for ind in pop])
 
             # Parent selection | Note: select generates references to the individuals in pop.
             # To have all parents reproduce, select a 'parents' parameter equal to population
@@ -511,8 +406,8 @@ class DEAP_Optimiser:
             # Mutate and reevaluate
             self.mutate(offspring)
             self.eval_offspring(offspring)
-            if self.config["do_fitshare"]:
-                self.fitness_sharing_np_3(offspring)
+            if self.config['do_fitshare']:
+                self.toolbox.fitness_sharing(offspring)
 
             # Only delete references created by select, not actual parents.
             # The parents still live in pop.
@@ -538,6 +433,7 @@ class DEAP_Optimiser:
                 offspring, self.config["population_size"]
             )
             del offspring
+            gc.collect()
         self.log_run(pop)
 
     def log_gen(self, n_gen, fitnesses):
@@ -551,7 +447,7 @@ class DEAP_Optimiser:
 
     def log_run(self, pop):
         print(f'====== Experiment {self.config["experiment_name"]} Finished ======')
-        fitnesses = [ind.fitness.values[0] for ind in pop]
+        fitnesses = [ind.non_adj_fitness.values[0] for ind in pop]
         mean, mx, std = np.mean(fitnesses), np.max(fitnesses), np.std(fitnesses)
         best_ind = max(pop, key=attrgetter("fitness"))
         print(f"Resulting Mean Fitness: {mean}.")

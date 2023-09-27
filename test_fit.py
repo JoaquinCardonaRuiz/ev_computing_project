@@ -1,17 +1,40 @@
 import random
+import scipy
 import math
 from matplotlib import pyplot as plt
 import numpy as np
 
-a = np.random.randint(0,2, (5,3))
-f = np.random.randint(0,100, (8))
+a = np.random.randint(0,10, (5,3))
+f = np.random.randint(0,100, (5))
 
+r_fitnesses = np.zeros_like(f)
+
+# Calculate Hamming distances for a chunk of individuals
+dist_matrix = scipy.spatial.distance.pdist(a, metric="hamming")
+dist_matrix = scipy.spatial.distance.squareform(dist_matrix)*3
+
+# Calculate denominators
+cond_matrix = dist_matrix <= 2
+den_factors = cond_matrix * (1 - (np.power((dist_matrix / 2),1)))
+denominators = np.sum(den_factors, axis=1)
+
+# Calculate resulting fitnesses for the current chunk
+r_fitnesses = f / denominators
+print(a)
+print(dist_matrix)
+print(cond_matrix)
+print(den_factors)
+print(denominators)
+print(f)
+print(r_fitnesses)
+
+quit()
 #print(np.array(dist_matrix).shape)
 print(a)
 dist_matrix = np.round(np.linalg.norm(a[:, None, :] - a[None, :, :], axis=-1))
-cond_matrix = dist_matrix <=2
-den_factors = cond_matrix - cond_matrix*(np.power((dist_matrix/2),1))
-den_factors = cond_matrix * (1 - (np.power((dist_matrix/2),1)))
+cond_matrix = dist_matrix <=7
+den_factors = cond_matrix - cond_matrix*(np.power((dist_matrix/7),1))
+den_factors = cond_matrix * (1 - (np.power((dist_matrix/7),2)))
 denominators = np.sum(den_factors, axis=1)
 print(dist_matrix)
 print(cond_matrix)
@@ -20,7 +43,6 @@ print(denominators)
 print("fitnesses: ")
 print(f)
 print(f/denominators)
-quit()
 
 s = [math.sin(i/100)*((i/3140)+0.1)+2 for i in range(3140)]
 
