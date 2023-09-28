@@ -1,6 +1,7 @@
 import json
 from scipy.optimize import dual_annealing
 import numpy as np
+import math
 from copy import deepcopy
 
 from deap_algorithm import DEAP_Optimiser
@@ -25,13 +26,21 @@ def get_bounds(config, config_keys):
 
 def update_config(x, config_keys, config):
     for i, key in enumerate(config_keys):
-        if i > 12:  # Only change values from the 13th index on
-            config[key] = x[i]
+        config[key] = x[i]
+    config['h_neurons'] = round(config['h_neurons'])
+    config['population_size'] = round(config['population_size'])
+    config['parents'] = math.ceil(config['population_size'] / 4)*2
+    config['children_per_parent'] = round(config['children_per_parent'])
+    config['mut_kwargs']['sigma'] = config['sigma']
+    config['mut_kwargs']['indpb'] = config['indpb']
+    config['parent_sel_kwargs']['tournsize'] = round(config['parent_tournsize'])
+    config['survivor_sel_kwargs']['tournsize'] = round(config['survivor_tournsize'])
     return config
 
 
 def objective_function(x, config_keys, config):
     updated_config = update_config(x, config_keys, config)
+    print('here')
     optimiser = DEAP_Optimiser(updated_config)
     best_gen_10 = -np.inf
 
@@ -51,8 +60,9 @@ def optimize(config_path):
     bounds = get_bounds(config, config_keys)
 
     result = dual_annealing(
-        lambda x: objective_function(x, config_keys, config_copy), bounds
+        lambda x: objective_function(x, config_keys, config_copy), bounds, maxiter=10
     )
+    print(x)
 
     optimized_params = {key: value for key, value in zip(config_keys, result.x)}
 

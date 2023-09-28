@@ -53,7 +53,6 @@ def selNonRepTournament(individuals, k, tournsize):
         chosen_one = max(aspirants, key=lambda x: individuals[x].fitness.values[0])
         chosen.append(individuals[chosen_one])
         del individuals[chosen_one]
-        gc.collect()
     # add back individuals because otherwise they get removed from
     # original population, because everything in deap is referential
     individuals += chosen
@@ -80,7 +79,6 @@ class DEAP_Optimiser:
 
     def __init__(self, config):
         self.config = config
-
         # Calculates number of weights
         n_inputs, n_outputs = 20, 5
         self.tot_neurons = (
@@ -203,7 +201,6 @@ class DEAP_Optimiser:
                 children += [child1, child2]
                 del child1.fitness.values
                 del child2.fitness.values
-                gc.collect()
         return children
 
     def eval_offspring(self, offspring):
@@ -217,7 +214,7 @@ class DEAP_Optimiser:
         fitnesses = map(self.toolbox.evaluate, invalid_ind)
         for ind, fit in zip(invalid_ind, fitnesses):
             ind.fitness.values = [fit]
-            ind.non_adj_fitness = [fit]
+            ind.non_adj_fitness.values = [fit]
 
     def mutate(self, offspring):
         """Mutate offspring individuals."""
@@ -225,7 +222,6 @@ class DEAP_Optimiser:
             if random.random() < self.config["mut_probability"]:
                 self.toolbox.mutate(mutant)
                 del mutant.fitness.values
-                gc.collect()
 
     def fitness_sharing_np(self, pop):
         """Implements Fitness Sharing to preserve diversity in population
@@ -272,7 +268,6 @@ class DEAP_Optimiser:
         )
         # Clear memory
         del dist_matrix, cond_matrix, weights
-        gc.collect()
         # Sum up denominators
         denominators = np.sum(den_factors, axis=1)
         # Get resulting fitnesses
@@ -344,7 +339,6 @@ class DEAP_Optimiser:
                 offspring, self.config["population_size"]
             )
             del offspring
-            gc.collect()
         self.log_run(pop)
         return np.max([ind.non_adj_fitness.values[0] for ind in pop])
 

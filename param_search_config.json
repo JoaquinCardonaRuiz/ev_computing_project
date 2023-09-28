@@ -1,38 +1,21 @@
 {
   "experiment_name": "test_experiment",
   "comment": "This is a test experiment",
-  "h_neurons": 10,
-  "h_neurons_bounds": [
-    10,
-    30
-  ],
-  "population_size": 500,
-  "population_size_bounds": [
-    50,
-    150
-  ],
-  "n_generations": 50,
-  "n_generations_bounds": [
-    10,
-    100
-  ],
-  "parents": 250,
-  "parents_bounds": [
-    10,
-    100
-  ],
+  "h_neurons": 5,
+  "h_neurons_bounds": [5,10],
+  "population_size": 8,
+  "population_size_bounds": [6,12],
+  "n_generations": 3,
+  "parents": 10,
   "children_per_parent": 2,
-  "children_per_parent_bounds": [
-    1,
-    5
-  ],
+  "children_per_parent_bounds": [2,5],
   "mode": "generational",
   "cx_method": "cxTwoPoint",
   "cx_kwargs": {},
 
   "mut_probability": 0.1,
   "mut_probability_bounds": [
-    0.0,
+    0.01,
     1.0
   ],
   "mut_method": "mutGaussian",
@@ -41,23 +24,23 @@
     "sigma": 1,
     "indpb": 0.1
   },
+  "indpb": 0.1,
+  "indpb_bounds": [0.01, 1],
+  "sigma": 0.1,
+  "sigma_bounds": [0.1, 10],
   "parent_sel_method": "selNonRepTournament",
   "parent_sel_kwargs": {
     "tournsize": 5
   },
+  "parent_tournsize": 5,
+  "parent_tournsize_bounds": [2, 50],
   "survivor_sel_method": "selNonRepTournament",
   "survivor_sel_kwargs": {
     "tournsize": 5
   },
+  "survivor_tournsize": 5,
+  "survivor_tournsize_bounds": [2, 50],
   "do_fitshare": false,
   "fitshare_radius": 12,
-  "fitshare_radius_bounds": [
-    1,
-    20
-  ],
-  "fitshare_strength": 2,
-  "fitshare_strength_bounds": [
-    1,
-    5
-  ]
+  "fitshare_strength": 2
 }
