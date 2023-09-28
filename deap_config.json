@@ -3,9 +3,9 @@
         "experiment_name": "no_fit_sharing",
         "comment": "Our test for generational with speciation",
         "h_neurons": 10,
-        "population_size": 500,
+        "population_size": 100,
         "n_generations": 50,
-        "parents": 250,
+        "parents": 50,
         "children_per_parent": 2,
         "mode": "generational",
         

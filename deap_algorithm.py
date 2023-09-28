@@ -229,21 +229,25 @@ class DEAP_Optimiser():
         for i in range(len(pop)):
             pop[i].fitness.values = [r_fitnesses[i]]
 
-    def measure_diversity(self, pop, mode='shannon'):
+    def shannon_entropy(self, weights):
+        weights = np.digitize(weights, bins=np.arange(np.min(weights), 
+                                                    np.max(weights),
+                                                    0.1))
+        trans_weights = weights.transpose()
+        count_weights = [np.bincount(row) for row in trans_weights]
+        entropies = np.array([scipy.stats.entropy(row) for row in count_weights])
+        return np.mean(entropies)
+
+    def hamming_diversity(self, weights):
+        dist_matrix = scipy.spatial.distance.pdist(weights, metric="hamming")
+        dist_matrix = scipy.spatial.distance.squareform(dist_matrix)*self.tot_neurons
+        return np.mean(dist_matrix)
+
+    def measure_diversity(self, pop):
         """ Measure diversity using Shannon Entropy"""
         weights = np.array([np.array(ind) for ind in pop],dtype=np.float16)
-        if mode == 'shannon':
-            weights = np.digitize(weights, bins=np.arange(np.min(weights), 
-                                                        np.max(weights),
-                                                        0.1))
-            trans_weights = weights.transpose()
-            count_weights = [np.bincount(row) for row in trans_weights]
-            entropies = np.array([scipy.stats.entropy(row) for row in count_weights])
-            return np.mean(entropies)
-        elif mode == 'hamming':
-            dist_matrix = scipy.spatial.distance.pdist(weights, metric="hamming")
-            dist_matrix = scipy.spatial.distance.squareform(dist_matrix)*self.tot_neurons
-            return np.mean(dist_matrix)
+        return({'shannon': self.shannon_entropy(weights), 
+                'hamming': self.hamming_diversity(weights)})            
 
     def optimise(self):
         """ Train an algorithm to play EvoMan by using the DEAP framework.
@@ -266,7 +270,7 @@ class DEAP_Optimiser():
                 now = datetime.now()
                 print(f'Gen time: {(now-old_time).total_seconds()}s')
                 
-            self.log_gen(g, [ind.non_adj_fitness.values[0] for ind in pop], self.toolbox.measure_diversity(pop, mode='shannon'))
+            self.log_gen(g, [ind.non_adj_fitness.values[0] for ind in pop], self.toolbox.measure_diversity(pop))
 
             # Parent selection | Note: select generates references to the individuals in pop.
             # To have all parents reproduce, select a 'parents' parameter equal to population
@@ -310,7 +314,10 @@ class DEAP_Optimiser():
         print(f'Mean Fitness for Generation {n_gen}: {np.mean(fitnesses)}.')
         print(f'Mean Diversity for Generation {n_gen}: {diversity}.')
         with open(f'./{self.config["experiment_name"]}/fitnesses.json', 'a') as out_file:
-            out_file.write(json.dumps({'generation':n_gen, 'fitnesses': fitnesses, 'diversity': diversity}))
+            out_file.write(json.dumps({'generation':n_gen, 
+                                       'fitnesses': fitnesses, 
+                                       'diversity_shannon': diversity['shannon'], 
+                                       'diversity_hamming': diversity['hamming']}))
             out_file.write("\n")
 
     def log_run(self, pop):
