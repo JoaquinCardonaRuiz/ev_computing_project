@@ -22,8 +22,8 @@
         "survivor_sel_method": "selNonRepTournament",
         "survivor_sel_kwargs": {"tournsize": 5},
         
-        "do_fitshare": true,
-        "dist_func": "euclidean",
+        "do_fitshare": false,
+        "dist_func": "hamming",
         "fitshare_radius": 12,
         "fitshare_strength": 2
     },

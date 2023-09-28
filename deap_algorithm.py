@@ -51,7 +51,6 @@ def selNonRepTournament(individuals, k, tournsize):
         chosen_one = max(aspirants, key=lambda x: individuals[x].fitness.values[0])
         chosen.append(individuals[chosen_one])
         del individuals[chosen_one]
-        gc.collect()
     # add back individuals because otherwise they get removed from
     # original population, because everything in deap is referential
     individuals += chosen
@@ -125,6 +124,7 @@ class DEAP_Optimiser():
         toolbox.register("parent_select", sel_methods[self.config['parent_sel_method']], **self.config['parent_sel_kwargs'])
         toolbox.register("survivor_select", sel_methods[self.config['survivor_sel_method']], **self.config['survivor_sel_kwargs'])
         toolbox.register("fitness_sharing", self.fitness_sharing_np)
+        toolbox.register("measure_diversity", self.measure_diversity)
         toolbox.register("evaluate", self.evaluate)
         return toolbox
     
@@ -165,7 +165,6 @@ class DEAP_Optimiser():
                 children += [child1, child2]
                 del child1.fitness.values
                 del child2.fitness.values
-                gc.collect()
         return children
 
     def eval_offspring(self, offspring):
@@ -179,7 +178,7 @@ class DEAP_Optimiser():
         fitnesses = map(self.toolbox.evaluate, invalid_ind)
         for ind, fit in zip(invalid_ind, fitnesses):
             ind.fitness.values = [fit]
-            ind.non_adj_fitness = [fit]
+            ind.non_adj_fitness.values = [fit]
 
     def mutate(self, offspring):
         """Mutate offspring individuals."""
@@ -187,7 +186,6 @@ class DEAP_Optimiser():
             if random.random() < self.config['mut_probability']:
                 self.toolbox.mutate(mutant)
                 del mutant.fitness.values
-                gc.collect()
 
 
     def fitness_sharing_np(self, pop):
@@ -223,7 +221,6 @@ class DEAP_Optimiser():
         den_factors = cond_matrix * (1 - (np.power((dist_matrix/ self.config['fitshare_radius']),self.config['fitshare_strength'])))
         # Clear memory
         del dist_matrix, cond_matrix, weights
-        gc.collect()
         # Sum up denominators
         denominators = np.sum(den_factors, axis=1)
         # Get resulting fitnesses
@@ -231,6 +228,22 @@ class DEAP_Optimiser():
         # Assign new fitnesses
         for i in range(len(pop)):
             pop[i].fitness.values = [r_fitnesses[i]]
+
+    def measure_diversity(self, pop, mode='shannon'):
+        """ Measure diversity using Shannon Entropy"""
+        weights = np.array([np.array(ind) for ind in pop],dtype=np.float16)
+        if mode == 'shannon':
+            weights = np.digitize(weights, bins=np.arange(np.min(weights), 
+                                                        np.max(weights),
+                                                        0.1))
+            trans_weights = weights.transpose()
+            count_weights = [np.bincount(row) for row in trans_weights]
+            entropies = np.array([scipy.stats.entropy(row) for row in count_weights])
+            return np.mean(entropies)
+        elif mode == 'hamming':
+            dist_matrix = scipy.spatial.distance.pdist(weights, metric="hamming")
+            dist_matrix = scipy.spatial.distance.squareform(dist_matrix)*self.tot_neurons
+            return np.mean(dist_matrix)
 
     def optimise(self):
         """ Train an algorithm to play EvoMan by using the DEAP framework.
@@ -253,7 +266,7 @@ class DEAP_Optimiser():
                 now = datetime.now()
                 print(f'Gen time: {(now-old_time).total_seconds()}s')
                 
-            self.log_gen(g, [ind.non_adj_fitness.values[0] for ind in pop])
+            self.log_gen(g, [ind.non_adj_fitness.values[0] for ind in pop], self.toolbox.measure_diversity(pop, mode='shannon'))
 
             # Parent selection | Note: select generates references to the individuals in pop.
             # To have all parents reproduce, select a 'parents' parameter equal to population
@@ -289,15 +302,15 @@ class DEAP_Optimiser():
             # To have all children survive, choose non-replacing selection method
             pop = self.toolbox.survivor_select(offspring, self.config['population_size'])
             del offspring
-            gc.collect()
         self.log_run(pop)
 
 
-    def log_gen(self, n_gen, fitnesses):
+    def log_gen(self, n_gen, fitnesses, diversity):
         """Log fitnesses for current generation in disk."""
         print(f'Mean Fitness for Generation {n_gen}: {np.mean(fitnesses)}.')
+        print(f'Mean Diversity for Generation {n_gen}: {diversity}.')
         with open(f'./{self.config["experiment_name"]}/fitnesses.json', 'a') as out_file:
-            out_file.write(json.dumps({'generation':n_gen, 'fitnesses': fitnesses}))
+            out_file.write(json.dumps({'generation':n_gen, 'fitnesses': fitnesses, 'diversity': diversity}))
             out_file.write("\n")
 
     def log_run(self, pop):
