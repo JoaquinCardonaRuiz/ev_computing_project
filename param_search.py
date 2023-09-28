@@ -25,7 +25,8 @@ def get_bounds(config, config_keys):
 
 def update_config(x, config_keys, config):
     for i, key in enumerate(config_keys):
-        config[key] = int(x[i]) if i <= 12 else x[i]
+        if i > 12:  # Only change values from the 13th index on
+            config[key] = x[i]
     return config
 
 

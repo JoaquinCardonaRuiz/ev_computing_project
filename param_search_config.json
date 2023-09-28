@@ -29,13 +29,18 @@
   "mode": "generational",
   "cx_method": "cxTwoPoint",
   "cx_kwargs": {},
+
   "mut_probability": 0.1,
   "mut_probability_bounds": [
     0.0,
     1.0
   ],
   "mut_method": "mutGaussian",
-  "mut_kwargs": {},
+  "mut_kwargs": {
+    "mu": 0,
+    "sigma": 1,
+    "indpb": 0.1
+  },
   "parent_sel_method": "selNonRepTournament",
   "parent_sel_kwargs": {
     "tournsize": 5
