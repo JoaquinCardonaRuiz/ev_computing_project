@@ -1,15 +1,16 @@
 {
-  "experiment_name": "test_experiment",
-  "comment": "This is a test experiment",
-  "h_neurons": 5,
-  "h_neurons_bounds": [5,10],
-  "population_size": 8,
-  "population_size_bounds": [6,12],
-  "n_generations": 3,
-  "parents": 10,
+  "experiment_name": "param_tuning_dual_annealing_1",
+  "comment": "A parameter tuning run",
+  "h_neurons": 10,
+  "h_neurons_bounds": [5,30],
+  "population_size": 500,
+  "population_size_bounds": [50,1000],
+  "n_generations": 50,
+  "parents": 250,
   "children_per_parent": 2,
   "children_per_parent_bounds": [2,5],
   "mode": "generational",
+
   "cx_method": "cxTwoPoint",
   "cx_kwargs": {},
 
@@ -28,18 +29,20 @@
   "indpb_bounds": [0.01, 1],
   "sigma": 0.1,
   "sigma_bounds": [0.1, 10],
+
   "parent_sel_method": "selNonRepTournament",
   "parent_sel_kwargs": {
     "tournsize": 5
   },
   "parent_tournsize": 5,
-  "parent_tournsize_bounds": [2, 50],
+  "parent_tournsize_bounds": [2, 49],
+
   "survivor_sel_method": "selNonRepTournament",
   "survivor_sel_kwargs": {
     "tournsize": 5
   },
   "survivor_tournsize": 5,
-  "survivor_tournsize_bounds": [2, 50],
+  "survivor_tournsize_bounds": [2, 49],
   "do_fitshare": false,
   "fitshare_radius": 12,
   "fitshare_strength": 2
