@@ -244,7 +244,8 @@ class DEAP_Optimiser():
         return np.mean(dist_matrix)
 
     def measure_diversity(self, pop):
-        return 0
+        return({'shannon': 0, 
+                'hamming': 0})
         """ Measure diversity using Shannon Entropy"""
         weights = np.array([np.array(ind) for ind in pop],dtype=np.float16)
         return({'shannon': self.shannon_entropy(weights), 
