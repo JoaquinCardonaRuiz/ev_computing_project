@@ -4,11 +4,11 @@
   "h_neurons": 10,
   "h_neurons_bounds": [5,30],
   "population_size": 500,
-  "population_size_bounds": [50,1000],
-  "n_generations": 50,
-  "parents": 250,
+  "population_size_bounds": [25,250],
+  "n_generations": 25,
+  "parents": 20,
   "children_per_parent": 2,
-  "children_per_parent_bounds": [2,5],
+  "children_per_parent_bounds": [2,4],
   "mode": "generational",
 
   "cx_method": "cxTwoPoint",
@@ -35,14 +35,14 @@
     "tournsize": 5
   },
   "parent_tournsize": 5,
-  "parent_tournsize_bounds": [2, 49],
+  "parent_tournsize_bounds": [2, 24],
 
   "survivor_sel_method": "selNonRepTournament",
   "survivor_sel_kwargs": {
     "tournsize": 5
   },
   "survivor_tournsize": 5,
-  "survivor_tournsize_bounds": [2, 49],
+  "survivor_tournsize_bounds": [2, 24],
   "do_fitshare": false,
   "fitshare_radius": 12,
   "fitshare_strength": 2

@@ -40,7 +40,6 @@ def update_config(x, config_keys, config):
 
 def objective_function(x, config_keys, config):
     updated_config = update_config(x, config_keys, config)
-    print('here')
     optimiser = DEAP_Optimiser(updated_config)
     best_gen_10 = -np.inf
 
@@ -62,7 +61,6 @@ def optimize(config_path):
     result = dual_annealing(
         lambda x: objective_function(x, config_keys, config_copy), bounds, maxiter=10
     )
-    print(x)
 
     optimized_params = {key: value for key, value in zip(config_keys, result.x)}
 
