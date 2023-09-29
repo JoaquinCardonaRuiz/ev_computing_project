@@ -1,5 +1,5 @@
 {
-  "experiment_name": "param_tuning_dual_annealing_1",
+  "experiment_name": "param_tuning_dual_annealing_4",
   "comment": "A parameter tuning run",
   "h_neurons": 10,
   "h_neurons_bounds": [5,30],

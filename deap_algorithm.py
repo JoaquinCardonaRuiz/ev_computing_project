@@ -93,7 +93,7 @@ class DEAP_Optimiser():
 
         env = Environment(
             experiment_name=self.config['experiment_name'],
-            enemies=[2],
+            enemies=[self.config['enemy']],
             playermode="ai",
             player_controller=player_controller(self.config['h_neurons']),
             enemymode="static",
@@ -244,8 +244,6 @@ class DEAP_Optimiser():
         return np.mean(dist_matrix)
 
     def measure_diversity(self, pop):
-        return({'shannon': 0, 
-                'hamming': 0})
         """ Measure diversity using Shannon Entropy"""
         weights = np.array([np.array(ind) for ind in pop],dtype=np.float16)
         return({'shannon': self.shannon_entropy(weights), 
