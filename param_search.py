@@ -41,14 +41,7 @@ def update_config(x, config_keys, config):
 def objective_function(x, config_keys, config):
     updated_config = update_config(x, config_keys, config)
     optimiser = DEAP_Optimiser(updated_config)
-    best_gen_10 = -np.inf
-
-    for gen in range(int(updated_config["n_generations"])):
-        fitness = optimiser.optimise()
-        if gen == 10 and fitness < best_gen_10:
-            return -fitness
-        best_gen_10 = fitness
-
+    fitness = optimiser.optimise()
     return -fitness
 
 

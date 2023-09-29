@@ -309,6 +309,7 @@ class DEAP_Optimiser():
             pop = self.toolbox.survivor_select(offspring, self.config['population_size'])
             del offspring
         self.log_run(pop)
+        return np.max([ind.non_adj_fitness.values[0] for ind in pop]) 
 
 
     def log_gen(self, n_gen, fitnesses, diversity):
