@@ -56,6 +56,31 @@ def selNonRepTournament(individuals, k, tournsize):
     individuals += chosen
     return chosen
 
+class Evaluator():
+    """ Class for evaluating best solutions for boxplot."""
+    def __init__(self, config):
+        self.config = config
+
+        if not os.path.exists(self.config['run_name']):
+            os.makedirs(self.config['run_name'])
+
+        self.env = Environment(
+            experiment_name=self.config['run_name'],
+            enemies=[self.config['enemy']],
+            playermode="ai",
+            player_controller=player_controller(self.config['h_neurons']),
+            enemymode="static",
+            level=2,
+            speed="fastest",
+            visuals=False)
+        self.env.state_to_log()
+
+    def run(self):
+        f,p,e,t = self.env.play(pcont=np.array(self.config['weights']))
+        return p-e
+        
+        
+
 class DEAP_Optimiser():
     """ DEAP Optimiser class
 

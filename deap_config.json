@@ -23,7 +23,7 @@
         "survivor_sel_method": "selNonRepTournament",
         "survivor_sel_kwargs": {"tournsize": 24},
         
-        "do_fitshare": false,
+        "do_fitshare": true,
         "dist_func": "hamming",
         "fitshare_radius": 100,
         "fitshare_strength": 1
@@ -52,7 +52,7 @@
         "survivor_sel_method": "selNonRepTournament",
         "survivor_sel_kwargs": {"tournsize": 24},
         
-        "do_fitshare": true,
+        "do_fitshare": false,
         "dist_func": "hamming",
         "fitshare_radius": 100,
         "fitshare_strength": 1
