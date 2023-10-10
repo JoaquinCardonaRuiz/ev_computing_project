@@ -1,46 +1,17 @@
 {"experiments": [
     {
-        "experiment_name": "experiment_fs",
+        "experiment_name": "experiment_blend_adp",
         "comment": "",
         "enemy": 1,
-        "h_neurons": 30,
-        "population_size": 250,
-        "n_generations": 50,
-        "parents": 126,
+        "h_neurons": 10,
+        "population_size": 100,
+        "n_generations": 30,
+        "parents": 50,
         "children_per_parent": 4,
         "mode": "generational",
         
-        "cx_method": "cxTwoPoint",
-        "cx_kwargs": {},
-        
-        "mut_probability": 0.05,
-        "mut_method": "mutGaussian",
-        "mut_kwargs": {"mu": 0, "sigma": 10, "indpb": 1},
-
-        "parent_sel_method": "selNonRepTournament",
-        "parent_sel_kwargs": {"tournsize": 24},
-
-        "survivor_sel_method": "selNonRepTournament",
-        "survivor_sel_kwargs": {"tournsize": 24},
-        
-        "do_fitshare": true,
-        "dist_func": "hamming",
-        "fitshare_radius": 100,
-        "fitshare_strength": 1
-    },
-    {
-        "experiment_name": "experiment_no_fs",
-        "comment": "",
-        "enemy": 1,
-        "h_neurons": 30,
-        "population_size": 250,
-        "n_generations": 50,
-        "parents": 126,
-        "children_per_parent": 4,
-        "mode": "generational",
-        
-        "cx_method": "cxTwoPoint",
-        "cx_kwargs": {},
+        "cx_method": "cxBlend",
+        "cx_kwargs": {"alpha": 0.3},
         
         "mut_probability": 0.05,
         "mut_method": "mutGaussian",

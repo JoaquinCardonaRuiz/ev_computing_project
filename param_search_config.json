@@ -3,7 +3,7 @@
   "comment": "A parameter tuning run",
   "h_neurons": 10,
   "h_neurons_bounds": [5,30],
-  "population_size": 500,
+  "population_size": 250,
   "population_size_bounds": [25,250],
   "n_generations": 25,
   "parents": 20,
@@ -11,13 +11,13 @@
   "children_per_parent_bounds": [2,4],
   "mode": "generational",
 
-  "cx_method": "cxTwoPoint",
-  "cx_kwargs": {},
+  "cx_method": "cxBlend",
+  "cx_kwargs": {"alpha": 0.15},
 
   "mut_probability": 0.1,
   "mut_probability_bounds": [
     0.01,
-    1.0
+    0.95
   ],
   "mut_method": "mutGaussian",
   "mut_kwargs": {
@@ -26,7 +26,7 @@
     "indpb": 0.1
   },
   "indpb": 0.1,
-  "indpb_bounds": [0.01, 1],
+  "indpb_bounds": [0.01, 0.95],
   "sigma": 0.1,
   "sigma_bounds": [0.1, 10],
 

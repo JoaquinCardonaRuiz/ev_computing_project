@@ -118,8 +118,9 @@ class DEAP_Optimiser():
 
         env = Environment(
             experiment_name=self.config['experiment_name'],
-            enemies=[self.config['enemy']],
+            enemies=[2,4,7],
             playermode="ai",
+            multiplemode="yes",
             player_controller=player_controller(self.config['h_neurons']),
             enemymode="static",
             level=2,
