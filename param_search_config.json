@@ -32,17 +32,12 @@
 
   "parent_sel_method": "selNonRepTournament",
   "parent_sel_kwargs": {
-    "tournsize": 5
+    "tournsize": 3
   },
-  "parent_tournsize": 5,
-  "parent_tournsize_bounds": [2, 24],
-
   "survivor_sel_method": "selNonRepTournament",
   "survivor_sel_kwargs": {
-    "tournsize": 5
-  },
-  "survivor_tournsize": 5,
-  "survivor_tournsize_bounds": [2, 24],
+    "tournsize": 3
+  },  
   "do_fitshare": false,
   "fitshare_radius": 12,
   "fitshare_strength": 2

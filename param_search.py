@@ -33,8 +33,6 @@ def update_config(x, config_keys, config):
     config['children_per_parent'] = round(config['children_per_parent'])
     config['mut_kwargs']['sigma'] = config['sigma']
     config['mut_kwargs']['indpb'] = config['indpb']
-    config['parent_sel_kwargs']['tournsize'] = round(config['parent_tournsize'])
-    config['survivor_sel_kwargs']['tournsize'] = round(config['survivor_tournsize'])
     return config
 
 
