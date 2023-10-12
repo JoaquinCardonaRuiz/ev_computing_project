@@ -56,6 +56,10 @@ def selNonRepTournament(individuals, k, tournsize):
     individuals += chosen
     return chosen
 
+class customEnv(Environment):
+    def cons_multi(self,values):
+        return values.mean()
+
 class Evaluator():
     """ Class for evaluating best solutions for boxplot."""
     def __init__(self, config):
@@ -64,7 +68,7 @@ class Evaluator():
         if not os.path.exists(self.config['run_name']):
             os.makedirs(self.config['run_name'])
 
-        self.env = Environment(
+        self.env = customEnv(
             experiment_name=self.config['run_name'],
             enemies=[self.config['enemy']],
             playermode="ai",
@@ -116,9 +120,9 @@ class DEAP_Optimiser():
         if not os.path.exists(self.config['experiment_name']):
             os.makedirs(self.config['experiment_name'])
 
-        env = Environment(
+        env = customEnv(
             experiment_name=self.config['experiment_name'],
-            enemies=[2,4,7,6],
+            enemies=self.config['enemies'],
             playermode="ai",
             multiplemode="yes",
             player_controller=player_controller(self.config['h_neurons']),
@@ -296,7 +300,9 @@ class DEAP_Optimiser():
                 now = datetime.now()
                 print(f'Gen time: {(now-old_time).total_seconds()}s')
                 
-            self.log_gen(g, [ind.non_adj_fitness.values[0] for ind in pop], self.toolbox.measure_diversity(pop))
+            self.log_gen(g, [ind.non_adj_fitness.values[0] for ind in pop], 
+                         self.toolbox.measure_diversity(pop),
+                         max(pop, key=attrgetter('non_adj_fitness')))
 
             # Parent selection | Note: select generates references to the individuals in pop.
             # To have all parents reproduce, select a 'parents' parameter equal to population
@@ -336,7 +342,7 @@ class DEAP_Optimiser():
         return np.max([ind.non_adj_fitness.values[0] for ind in pop]) 
 
 
-    def log_gen(self, n_gen, fitnesses, diversity):
+    def log_gen(self, n_gen, fitnesses, diversity, best):
         """Log fitnesses for current generation in disk."""
         print(f'Mean Fitness for Generation {n_gen}: {np.mean(fitnesses)}.')
         print(f'Mean Diversity for Generation {n_gen}: {diversity}.')
@@ -344,19 +350,20 @@ class DEAP_Optimiser():
             out_file.write(json.dumps({'generation':n_gen, 
                                        'fitnesses': fitnesses, 
                                        'diversity_shannon': diversity['shannon'], 
-                                       'diversity_hamming': diversity['hamming']}))
+                                       'diversity_hamming': diversity['hamming'],
+                                       'best': list(best)}))
             out_file.write("\n")
 
     def log_run(self, pop):
         print(f'====== Experiment {self.config["experiment_name"]} Finished ======')
         fitnesses = [ind.non_adj_fitness.values[0] for ind in pop]
         mean, mx, std = np.mean(fitnesses), np.max(fitnesses), np.std(fitnesses)
-        best_ind = max(pop, key=attrgetter('fitness'))
+        best_ind = max(pop, key=attrgetter('non_adj_fitness'))
         print(f'Resulting Mean Fitness: {mean}.')
         print(f'Resulting Max Fitness:  {mx}.')
         print(f'Resulting Std Fitness:  {std}.')
         with open(f'./{self.config["experiment_name"]}/results.json', 'a') as out_file:
-            out_file.write(json.dumps({'mean':mean, 'max': mx, 'std': std, 'best': list(best_ind), 'config': self.config},indent=4))
+            out_file.write(json.dumps({'mean':mean, 'max': mx, 'std': std, 'best': list(best_ind), 'config': self.config}))
             out_file.write("\n")
 
 

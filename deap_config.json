@@ -1,27 +1,27 @@
 {"experiments": [
     {
-        "experiment_name": "experiment_blend_adp",
-        "comment": "",
-        "enemy": 1,
+        "experiment_name": "TEST NAME HERE",
+        "comment": "COMMENT HERE",
+        "enemies": [2,4,7,6],
         "h_neurons": 10,
-        "population_size": 100,
-        "n_generations": 30,
-        "parents": 50,
+        "population_size": 84,
+        "n_generations": 100,
+        "parents": 42,
         "children_per_parent": 4,
         "mode": "generational",
         
         "cx_method": "cxBlend",
-        "cx_kwargs": {"alpha": 0.3},
+        "cx_kwargs": {"alpha": 0.15},
         
-        "mut_probability": 0.05,
+        "mut_probability": 0.06,
         "mut_method": "mutGaussian",
-        "mut_kwargs": {"mu": 0, "sigma": 10, "indpb": 1},
+        "mut_kwargs": {"mu": 0, "sigma": 4.47, "indpb": 0.697},
 
         "parent_sel_method": "selNonRepTournament",
-        "parent_sel_kwargs": {"tournsize": 24},
+        "parent_sel_kwargs": {"tournsize": 3},
 
         "survivor_sel_method": "selNonRepTournament",
-        "survivor_sel_kwargs": {"tournsize": 24},
+        "survivor_sel_kwargs": {"tournsize": 3},
         
         "do_fitshare": false,
         "dist_func": "hamming",
