@@ -58,7 +58,7 @@ def selNonRepTournament(individuals, k, tournsize):
 
 class customEnv(Environment):
     def cons_multi(self,values):
-        return values.mean()
+        return values
 
 class Evaluator():
     """ Class for evaluating best solutions for boxplot."""
@@ -290,14 +290,7 @@ class DEAP_Optimiser():
         as a result.
         """
         pop = self.toolbox.population(n=self.config['population_size'])
-
-        with open('results_opt_2.json', 'r') as file: 
-            for i in range(len(pop)):
-                weights = json.loads(file.readline())['best']
-                for j in range(256):
-                    pop[i][j] = weights[j]
-        np.random.shuffle(pop)
-
+        
         # Evaluate the entire population
         fitnesses = map(self.toolbox.evaluate, pop)
         for ind, fit in zip(pop, fitnesses):
@@ -311,7 +304,7 @@ class DEAP_Optimiser():
                 now = datetime.now()
                 print(f'Gen time: {(now-old_time).total_seconds()}s')
             
-            '''if g%10 == 0:
+            if g%10 == 0:
                 all_enemies = [1,2,3,4,5,6,7,8]
                 if g > 250: 
                     if self.config['enemies'] != all_enemies:
@@ -323,23 +316,8 @@ class DEAP_Optimiser():
                 else:
                     self.config['enemies'] = list(set(all_enemies)-set(self.config['enemies']))
                     print(f'Enemies being set to: {self.config["enemies"]}')
-                    self.env = self.set_env()'''
-            if g%10 == 0 and g>4:
-                all_enemies = [1,2,3,4,5,6,7,8]
-                if g > 50: 
-                    if self.config['enemies'] != all_enemies:
-                        self.config['enemies'] = all_enemies
-                        print(f'Enemies being set to: {self.config["enemies"]}')
-                        self.env = self.set_env()
-                    else:
-                        pass
-                else:
-                    if self.config['enemies'] != all_enemies:
-                        self.config['enemies'] = all_enemies
-                    else:
-                        self.config['enemies'] = [1,1]
-                    print(f'Enemies being set to: {self.config["enemies"]}')
                     self.env = self.set_env()
+            
             self.log_gen(g, [ind.non_adj_fitness.values[0] for ind in pop], 
                          self.toolbox.measure_diversity(pop),
                          max(pop, key=attrgetter('non_adj_fitness')))
