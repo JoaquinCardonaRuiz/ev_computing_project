@@ -319,13 +319,6 @@ class DEAP_Optimiser():
         """
         pop = self.toolbox.population(n=self.config['population_size'])
 
-        with open('results_opt_2.json', 'r') as file: 
-            for i in range(len(pop)):
-                weights = json.loads(file.readline())['best']
-                for j in range(256):
-                    pop[i][j] = weights[j]
-        np.random.shuffle(pop)
-
         # Evaluate the entire population
         fitnesses = map(self.toolbox.evaluate, pop)
         for ind, fit in zip(pop, fitnesses):
