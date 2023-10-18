@@ -299,7 +299,7 @@ class DEAP_Optimiser():
         Once a certain number of generations have passed, alpha returns to its base value.
         """
         if g < self.config['delayed_exp_gen']:
-            self.config['cx_kwargs']['alpha'] = 3/exp(diversity['shannon'])
+            self.config['cx_kwargs']['alpha'] = 3/exp(self.config['div_bias'] * diversity['shannon'])
         else:
             self.config['cx_kwargs']['alpha'] = self.config['alpha_base']
         self.reset_mate_method()

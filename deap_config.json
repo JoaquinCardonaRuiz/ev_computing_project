@@ -1,6 +1,6 @@
 {"experiments": [
     {
-        "experiment_name": "joaquin_test_run_aa",
+        "experiment_name": "joaquin_test_run_naa",
         "comment": "Adaptive alpha on test",
         "enemies": [],
         "h_neurons": 10,
@@ -11,9 +11,10 @@
         "mode": "generational",
         
         "cx_method": "cxBlend",
-        "cx_kwargs": {"alpha": 0.15},
-        "do_adaptive_alpha": true,
+        "cx_kwargs": {"alpha": 0.3},
+        "do_adaptive_alpha": false,
         "alpha_base": 0.15,
+        "div_bias": 0.5,
         "delayed_exp_gen": 150,
         
         "mut_probability": 0.25,
