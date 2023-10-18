@@ -59,6 +59,10 @@ def selNonRepTournament(individuals, k, tournsize):
 class customEnv(Environment):
     def cons_multi(self,values):
         return values.mean()
+    
+class evaluatorEnv(Environment):
+    def cons_multi(self,values):
+        return values
 
 class Evaluator():
     """ Class for evaluating best solutions for boxplot."""
@@ -68,7 +72,7 @@ class Evaluator():
         if not os.path.exists(self.config['run_name']):
             os.makedirs(self.config['run_name'])
 
-        self.env = customEnv(
+        self.env = evaluatorEnv(
             experiment_name=self.config['run_name'],
             enemies=self.config['enemies'],
             multiplemode="yes",
