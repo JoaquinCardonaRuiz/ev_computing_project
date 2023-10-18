@@ -24,4 +24,3 @@ for exp in config['experiments']:
             exp['experiment_name'] = name + '_e_'+enemy_set+'_r'+str(i)
             optimiser = DEAP_Optimiser(exp)
             optimiser.optimise()
-            quit()
