@@ -120,6 +120,8 @@ class DEAP_Optimiser():
         
         # Set up DEAP toolbox
         self.toolbox = self.set_toolbox()
+
+        self.a_alpha_started = False
       
     def set_env(self):
         """Initialises EvoMan simulation environment."""
@@ -298,12 +300,15 @@ class DEAP_Optimiser():
         Base value for alpha is 0.15, which is the value it takes when diversity is maximum (3).
         Once a certain number of generations have passed, alpha returns to its base value.
         """
-        if g < self.config['delayed_exp_gen']:
-            self.config['cx_kwargs']['alpha'] = 3/exp(self.config['div_bias'] * diversity['shannon'])
-        else:
-            self.config['cx_kwargs']['alpha'] = self.config['alpha_base']
-        self.reset_mate_method()
         
+        if diversity['shannon'] < self.config['div_threshold']:
+            self.a_alpha_started = True
+        if g >= self.config['delayed_exp_gen']:
+            self.config['cx_kwargs']['alpha'] = self.config['alpha_base']
+        elif self.a_alpha_started:
+            self.config['cx_kwargs']['alpha'] = 3/exp(self.config['div_bias'] * diversity['shannon'])            
+        self.reset_mate_method()
+    
 
     def optimise(self):
         """ Train an algorithm to play EvoMan by using the DEAP framework.

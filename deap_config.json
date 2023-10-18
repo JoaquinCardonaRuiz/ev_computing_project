@@ -1,20 +1,21 @@
 {"experiments": [
     {
-        "experiment_name": "joaquin_test_run_naa",
+        "experiment_name": "joaquin_test_aa05",
         "comment": "Adaptive alpha on test",
         "enemies": [],
         "h_neurons": 10,
-        "population_size": 250,
+        "population_size": 200,
         "n_generations": 200,
-        "parents": 120,
-        "children_per_parent": 4,
+        "parents": 100,
+        "children_per_parent": 3,
         "mode": "generational",
         
         "cx_method": "cxBlend",
         "cx_kwargs": {"alpha": 0.3},
-        "do_adaptive_alpha": false,
-        "alpha_base": 0.15,
+        "do_adaptive_alpha": true,
+        "alpha_base": 0.12,
         "div_bias": 0.5,
+        "div_threshold": 4,
         "delayed_exp_gen": 150,
         
         "mut_probability": 0.25,
@@ -33,31 +34,169 @@
         "fitshare_strength": 1
     },
     {
-        "experiment_name": "joaquin_test_run_naa",
-        "comment": "Adaptive alpha off test",
+        "experiment_name": "joaquin_test_aa045",
+        "comment": "Adaptive alpha on test",
         "enemies": [],
         "h_neurons": 10,
-        "population_size": 50,
-        "n_generations": 15,
-        "parents": 20,
-        "children_per_parent": 4,
+        "population_size": 200,
+        "n_generations": 200,
+        "parents": 100,
+        "children_per_parent": 3,
         "mode": "generational",
         
         "cx_method": "cxBlend",
-        "cx_kwargs": {"alpha": 0.15},
-        "do_adaptive_alpha": false,
+        "cx_kwargs": {"alpha": 0.3},
+        "do_adaptive_alpha": true,
         "alpha_base": 0.15,
-        "delayed_exp_gen": 10,
+        "div_bias": 0.45,
+        "div_threshold": 4.5,
+        "delayed_exp_gen": 100,
         
         "mut_probability": 0.25,
         "mut_method": "mutGaussian",
         "mut_kwargs": {"mu": 0, "sigma": 4.47, "indpb": 0.697},
 
         "parent_sel_method": "selNonRepTournament",
-        "parent_sel_kwargs": {"tournsize": 3},
+        "parent_sel_kwargs": {"tournsize": 5},
 
         "survivor_sel_method": "selNonRepTournament",
-        "survivor_sel_kwargs": {"tournsize": 3},
+        "survivor_sel_kwargs": {"tournsize": 5},
+        
+        "do_fitshare": false,
+        "dist_func": "hamming",
+        "fitshare_radius": 100,
+        "fitshare_strength": 1
+    },
+    {
+        "experiment_name": "joaquin_test_aa067",
+        "comment": "Adaptive alpha on test",
+        "enemies": [],
+        "h_neurons": 10,
+        "population_size": 200,
+        "n_generations": 250,
+        "parents": 100,
+        "children_per_parent": 3,
+        "mode": "generational",
+        
+        "cx_method": "cxBlend",
+        "cx_kwargs": {"alpha": 0.3},
+        "do_adaptive_alpha": true,
+        "alpha_base": 0.15,
+        "div_bias": 0.67,
+        "div_threshold": 3,
+        "delayed_exp_gen": 175,
+        
+        "mut_probability": 0.25,
+        "mut_method": "mutGaussian",
+        "mut_kwargs": {"mu": 0, "sigma": 4.47, "indpb": 0.697},
+
+        "parent_sel_method": "selNonRepTournament",
+        "parent_sel_kwargs": {"tournsize": 5},
+
+        "survivor_sel_method": "selNonRepTournament",
+        "survivor_sel_kwargs": {"tournsize": 5},
+        
+        "do_fitshare": false,
+        "dist_func": "hamming",
+        "fitshare_radius": 100,
+        "fitshare_strength": 1
+    },
+    {
+        "experiment_name": "joaquin_test_aa08",
+        "comment": "Adaptive alpha on test",
+        "enemies": [],
+        "h_neurons": 10,
+        "population_size": 200,
+        "n_generations": 250,
+        "parents": 100,
+        "children_per_parent": 3,
+        "mode": "generational",
+        
+        "cx_method": "cxBlend",
+        "cx_kwargs": {"alpha": 0.3},
+        "do_adaptive_alpha": true,
+        "alpha_base": 0.13,
+        "div_bias": 0.8,
+        "div_threshold": 3,
+        "delayed_exp_gen": 185,
+        
+        "mut_probability": 0.25,
+        "mut_method": "mutGaussian",
+        "mut_kwargs": {"mu": 0, "sigma": 4.47, "indpb": 0.697},
+
+        "parent_sel_method": "selNonRepTournament",
+        "parent_sel_kwargs": {"tournsize": 5},
+
+        "survivor_sel_method": "selNonRepTournament",
+        "survivor_sel_kwargs": {"tournsize": 5},
+        
+        "do_fitshare": false,
+        "dist_func": "hamming",
+        "fitshare_radius": 100,
+        "fitshare_strength": 1
+    },
+    {
+        "experiment_name": "joaquin_test_aa1",
+        "comment": "Adaptive alpha on test",
+        "enemies": [],
+        "h_neurons": 10,
+        "population_size": 200,
+        "n_generations": 250,
+        "parents": 100,
+        "children_per_parent": 3,
+        "mode": "generational",
+        
+        "cx_method": "cxBlend",
+        "cx_kwargs": {"alpha": 0.3},
+        "do_adaptive_alpha": true,
+        "alpha_base": 0.12,
+        "div_bias": 1,
+        "div_threshold": 3,
+        "delayed_exp_gen": 195,
+        
+        "mut_probability": 0.25,
+        "mut_method": "mutGaussian",
+        "mut_kwargs": {"mu": 0, "sigma": 4.47, "indpb": 0.697},
+
+        "parent_sel_method": "selNonRepTournament",
+        "parent_sel_kwargs": {"tournsize": 5},
+
+        "survivor_sel_method": "selNonRepTournament",
+        "survivor_sel_kwargs": {"tournsize": 5},
+        
+        "do_fitshare": false,
+        "dist_func": "hamming",
+        "fitshare_radius": 100,
+        "fitshare_strength": 1
+    },
+    {
+        "experiment_name": "joaquin_test_aa04503",
+        "comment": "Adaptive alpha on test",
+        "enemies": [],
+        "h_neurons": 10,
+        "population_size": 200,
+        "n_generations": 250,
+        "parents": 100,
+        "children_per_parent": 3,
+        "mode": "generational",
+        
+        "cx_method": "cxBlend",
+        "cx_kwargs": {"alpha": 0.3},
+        "do_adaptive_alpha": true,
+        "alpha_base": 0.3,
+        "div_bias": 0.45,
+        "div_threshold": 4.5,
+        "delayed_exp_gen": 75,
+        
+        "mut_probability": 0.25,
+        "mut_method": "mutGaussian",
+        "mut_kwargs": {"mu": 0, "sigma": 4.47, "indpb": 0.697},
+
+        "parent_sel_method": "selNonRepTournament",
+        "parent_sel_kwargs": {"tournsize": 5},
+
+        "survivor_sel_method": "selNonRepTournament",
+        "survivor_sel_kwargs": {"tournsize": 5},
         
         "do_fitshare": false,
         "dist_func": "hamming",
