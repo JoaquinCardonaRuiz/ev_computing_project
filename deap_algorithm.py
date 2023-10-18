@@ -7,26 +7,24 @@ with a JSON config string before the 'optimise' method can be called to run the 
 The configuration JSON strings determines whether the algorithm returns or logs its results.
 """
 # Built-in imports
-import gc
-import os
 import json
-import scipy
+import os
 import random
-import numpy as np
+from datetime import datetime
 from math import exp
 from operator import attrgetter
-from matplotlib import pyplot as plt
-from datetime import datetime
 
+import numpy as np
+import scipy
 # DEAP imports
 from deap import base, creator, tools
-from deap.tools.selection import __all__ as all_selections
-from deap.tools.mutation import __all__ as all_mutations
 from deap.tools.crossover import __all__ as all_crossovers
+from deap.tools.mutation import __all__ as all_mutations
+from deap.tools.selection import __all__ as all_selections
 
+from demo_controller import player_controller
 # Evoman Imports
 from evoman.environment import Environment
-from demo_controller import player_controller
 
 
 def selNonRepTournament(individuals, k, tournsize):
@@ -44,7 +42,7 @@ def selNonRepTournament(individuals, k, tournsize):
     :mod:`random` module.
     """
     # Check that we won't run out of individuals to pick
-    #if len(individuals) - k < tournsize: raise ValueError('Tournament: too few individuals for parameters specified.') 
+    # if len(individuals) - k < tournsize: raise ValueError('Tournament: too few individuals for parameters specified.')
     chosen = []
     for i in range(k):
         # remove individuals chosen from pool
@@ -57,13 +55,16 @@ def selNonRepTournament(individuals, k, tournsize):
     individuals += chosen
     return chosen
 
+
 class customEnv(Environment):
-    def cons_multi(self,values):
+    def cons_multi(self, values):
         return values.mean()
-    
+
+
 class evaluatorEnv(Environment):
-    def cons_multi(self,values):
+    def cons_multi(self, values):
         return values
+
 
 class Evaluator():
     """ Class for evaluating best solutions for boxplot."""
@@ -88,18 +89,17 @@ class Evaluator():
     def run(self):
         f,p,e,t = self.env.play(pcont=np.array(self.config['weights']))
         return f,p,e,t
-        
-        
+
 
 class DEAP_Optimiser():
     """ DEAP Optimiser class
 
-    Runs an evolutionary algorithm using the DEAP framework. Initialises using a 
+    Runs an evolutionary algorithm using the DEAP framework. Initialises using a
     JSON string that sets the configuration for the class, including hyperparameters
     of the algorithm, as well as methods of selection, mutation, and crossover.
 
     Contains the following methods:
-    
+
     :__init__(self, config): initialises the class, takes a JSON string with parameters
         for configuration.
     :set_env(self): configures EvoMan environment.
@@ -112,17 +112,17 @@ class DEAP_Optimiser():
         self.config = config
 
         # Calculates number of weights
-        n_inputs, n_outputs  = 20, 5
+        n_inputs, n_outputs = 20, 5
         self.tot_neurons = self.config['h_neurons'] * (n_inputs + n_outputs + 1) + n_outputs
 
         # Set simulation Environment
         self.env = self.set_env()
-        
+
         # Set up DEAP toolbox
         self.toolbox = self.set_toolbox()
 
         self.a_alpha_started = False
-      
+
     def set_env(self):
         """Initialises EvoMan simulation environment."""
         if not os.path.exists(self.config['experiment_name']):
@@ -145,17 +145,16 @@ class DEAP_Optimiser():
         """Initialises DEAP framework with specified parameters."""
         toolbox = base.Toolbox()
 
-        cx_methods =  {method_name:getattr(tools, method_name) for method_name in all_crossovers}
-        mut_methods = {method_name:getattr(tools, method_name) for method_name in all_mutations}
-        sel_methods = {method_name:getattr(tools, method_name) for method_name in all_selections}
+        cx_methods = {method_name: getattr(tools, method_name) for method_name in all_crossovers}
+        mut_methods = {method_name: getattr(tools, method_name) for method_name in all_mutations}
+        sel_methods = {method_name: getattr(tools, method_name) for method_name in all_selections}
         sel_methods['selNonRepTournament'] = selNonRepTournament
 
         creator.create("FitnessMax", base.Fitness, weights=(1.0,))
-        creator.create("Individual", list, fitness=creator.FitnessMax, 
-                                           non_adj_fitness=creator.FitnessMax)
+        creator.create("Individual", list, fitness=creator.FitnessMax, non_adj_fitness=creator.FitnessMax)
+
         toolbox.register("attr_float", np.random.uniform,-1,1)
-        toolbox.register("individual", tools.initRepeat, creator.Individual, 
-                              toolbox.attr_float, n=self.tot_neurons)
+        toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_float, n=self.tot_neurons)
         toolbox.register("population", tools.initRepeat, list, toolbox.individual)
         toolbox.register("mate", cx_methods[self.config['cx_method']], **self.config['cx_kwargs'])
         toolbox.register("mutate", mut_methods[self.config['mut_method']], **self.config['mut_kwargs'])
@@ -164,12 +163,15 @@ class DEAP_Optimiser():
         toolbox.register("fitness_sharing", self.fitness_sharing_np)
         toolbox.register("measure_diversity", self.measure_diversity)
         toolbox.register("evaluate", self.evaluate)
+
         return toolbox
-    
+
+
     def reset_mate_method(self):
         cx_methods =  {method_name:getattr(tools, method_name) for method_name in all_crossovers}
         self.toolbox.unregister("mate")
         self.toolbox.register("mate", cx_methods[self.config['cx_method']], **self.config['cx_kwargs'])
+
 
     def check_repeats(self, population, where):
         ids = [id(ind) for ind in population]
@@ -185,7 +187,7 @@ class DEAP_Optimiser():
         elif val_reps:
             print(f'{where}: Repeat vals only!')
             _ = input('continue?')
-        
+
     def evaluate(self, individual):
         """ Run EvoMan and return fitness of individual.
         
@@ -230,15 +232,14 @@ class DEAP_Optimiser():
                 self.toolbox.mutate(mutant)
                 del mutant.fitness.values
 
-
     def fitness_sharing_np(self, pop):
         """ Implements Fitness Sharing to preserve diversity in population
 
         Uses NumPy to calculate distances between networks. This is pretty
-        bad code but it's the only way I managed to make it performant. 
+        bad code but it's the only way I managed to make it performant.
 
         Applies the Frobenius matrix norm to the weights of the population
-        to calculate distances and uses map operations to calculate new 
+        to calculate distances and uses map operations to calculate new
         fitness sharing factors.
 
         See https://en.wikipedia.org/wiki/Matrix_norm#Frobenius_norm
@@ -248,8 +249,8 @@ class DEAP_Optimiser():
         # We use float16 to save memory. The first operation in this algorithm
         # involves creating a 3D matrix of size pop_size X pop_size X neurons
         # which can balloon to thousands of gigabytes if not careful
-        weights = np.array([np.array(ind) for ind in pop],dtype=np.float16)
-        fitnesses = np.array([ind.fitness.values[0] for ind in pop],dtype=np.float16)
+        weights = np.array([np.array(ind) for ind in pop], dtype=np.float16)
+        fitnesses = np.array([ind.fitness.values[0] for ind in pop], dtype=np.float16)
 
         if self.config['dist_func'] == 'euclidean':
             # Get pairwise individual x individual distances using Frobenius norm
@@ -261,7 +262,7 @@ class DEAP_Optimiser():
         # Get boolean matrix with elements inside the radius
         cond_matrix = dist_matrix <= self.config['fitshare_radius']
         # Include strength factor
-        den_factors = cond_matrix * (1 - (np.power((dist_matrix/ self.config['fitshare_radius']),self.config['fitshare_strength'])))
+        den_factors = cond_matrix * (1 - (np.power((dist_matrix/ self.config['fitshare_radius']), self.config['fitshare_strength'])))
         # Clear memory
         del dist_matrix, cond_matrix, weights
         # Sum up denominators
@@ -273,9 +274,7 @@ class DEAP_Optimiser():
             pop[i].fitness.values = [r_fitnesses[i]]
 
     def shannon_entropy(self, weights):
-        weights = np.digitize(weights, bins=np.arange(np.min(weights), 
-                                                    np.max(weights),
-                                                    0.1))
+        weights = np.digitize(weights, bins=np.arange(np.min(weights), np.max(weights), 0.1))
         trans_weights = weights.transpose()
         count_weights = [np.bincount(row) for row in trans_weights]
         entropies = np.array([scipy.stats.entropy(row) for row in count_weights])
@@ -288,14 +287,13 @@ class DEAP_Optimiser():
 
     def measure_diversity(self, pop):
         """ Measure diversity using Shannon Entropy"""
-        weights = np.array([np.array(ind) for ind in pop],dtype=np.float16)
-        return({'shannon': self.shannon_entropy(weights), 
-                'hamming': self.hamming_diversity(weights)})            
+        weights = np.array([np.array(ind) for ind in pop], dtype=np.float16)
+        return ({'shannon': self.shannon_entropy(weights),
+                'hamming': self.hamming_diversity(weights)})
 
     def update_alpha(self, g, diversity):
         """ Dynamically updates the alpha value based on diversity and generation number.
-        
-        The alpha is set according to the following function: 3/(e^x), where x is the shannon entropy 
+        The alpha is set according to the following function: 3/(e^x), where x is the shannon entropy
         of the population genotype.
         Base value for alpha is 0.15, which is the value it takes when diversity is maximum (3).
         Once a certain number of generations have passed, alpha returns to its base value.
@@ -306,15 +304,15 @@ class DEAP_Optimiser():
         if g >= self.config['delayed_exp_gen']:
             self.config['cx_kwargs']['alpha'] = self.config['alpha_base']
         elif self.a_alpha_started:
-            self.config['cx_kwargs']['alpha'] = 3/exp(self.config['div_bias'] * diversity['shannon'])            
+            self.config['cx_kwargs']['alpha'] = 3/exp(self.config['div_bias'] * diversity['shannon'])
         self.reset_mate_method()
-    
+
 
     def optimise(self):
         """ Train an algorithm to play EvoMan by using the DEAP framework.
-        
+
         Runs for several generations, selecting and mating the best algorithms according to the
-        methods specified to find an optimised solution. Returns the last population of algorithms 
+        methods specified to find an optimised solution. Returns the last population of algorithms
         as a result.
         """
         pop = self.toolbox.population(n=self.config['population_size'])
@@ -325,7 +323,7 @@ class DEAP_Optimiser():
             ind.fitness.values = [fit]
             ind.non_adj_fitness.values = [fit]
 
-        now  = datetime.now()
+        now = datetime.now()
         for g in range(self.config['n_generations']):
             if g > 0:
                 old_time = now
@@ -337,7 +335,7 @@ class DEAP_Optimiser():
             if self.config['do_adaptive_alpha']:
                 self.update_alpha(g, diversity)
 
-            self.log_gen(g, [ind.non_adj_fitness.values[0] for ind in pop], 
+            self.log_gen(g, [ind.non_adj_fitness.values[0] for ind in pop],
                          diversity,
                          self.config['cx_kwargs']['alpha'],
                          max(pop, key=attrgetter('non_adj_fitness')))
@@ -356,7 +354,7 @@ class DEAP_Optimiser():
             if self.config['do_fitshare']:
                 self.toolbox.fitness_sharing(offspring)
 
-            # Only delete references created by select, not actual parents. 
+            # Only delete references created by select, not actual parents.
             # The parents still live in pop.
             del parents_to_reproduce
             
@@ -377,8 +375,7 @@ class DEAP_Optimiser():
             pop = self.toolbox.survivor_select(offspring, self.config['population_size'])
             del offspring
         self.log_run(pop)
-        return np.max([ind.non_adj_fitness.values[0] for ind in pop]) 
-
+        return np.max([ind.non_adj_fitness.values[0] for ind in pop])
 
     def log_gen(self, n_gen, fitnesses, diversity, alpha, best):
         """Log fitnesses for current generation in disk."""
@@ -386,9 +383,9 @@ class DEAP_Optimiser():
         print(f'Mean Diversity for Generation {n_gen}: {diversity}.')
         print(f'Alpha value for Generation {n_gen}: {alpha}')
         with open(f'./{self.config["experiment_name"]}/fitnesses.json', 'a') as out_file:
-            out_file.write(json.dumps({'generation':n_gen, 
-                                       'fitnesses': fitnesses, 
-                                       'diversity_shannon': diversity['shannon'], 
+            out_file.write(json.dumps({'generation': n_gen,
+                                       'fitnesses': fitnesses,
+                                       'diversity_shannon': diversity['shannon'],
                                        'diversity_hamming': diversity['hamming'],
                                        'alpha': alpha,
                                        'best': list(best)}))
@@ -405,6 +402,3 @@ class DEAP_Optimiser():
         with open(f'./{self.config["experiment_name"]}/results.json', 'a') as out_file:
             out_file.write(json.dumps({'mean':mean, 'max': mx, 'std': std, 'best': list(best_ind), 'config': self.config}))
             out_file.write("\n")
-
-
-
