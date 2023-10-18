@@ -1,17 +1,20 @@
 {"experiments": [
     {
-        "experiment_name": "joaquin_test_opt_5",
-        "comment": "Original annealing params with high pop and low gens and twopoint and high mutation",
-        "enemies": [1,2,3,4,5,6,7,8],
+        "experiment_name": "joaquin_test_run_aa",
+        "comment": "Adaptive alpha on test",
+        "enemies": [],
         "h_neurons": 10,
-        "population_size": 500,
-        "n_generations": 1000,
-        "parents": 250,
+        "population_size": 250,
+        "n_generations": 200,
+        "parents": 120,
         "children_per_parent": 4,
         "mode": "generational",
         
-        "cx_method": "cxTwoPoint",
-        "cx_kwargs": {},
+        "cx_method": "cxBlend",
+        "cx_kwargs": {"alpha": 0.15},
+        "do_adaptive_alpha": true,
+        "alpha_base": 0.15,
+        "delayed_exp_gen": 150,
         
         "mut_probability": 0.25,
         "mut_method": "mutGaussian",
@@ -22,6 +25,38 @@
 
         "survivor_sel_method": "selNonRepTournament",
         "survivor_sel_kwargs": {"tournsize": 5},
+        
+        "do_fitshare": false,
+        "dist_func": "hamming",
+        "fitshare_radius": 100,
+        "fitshare_strength": 1
+    },
+    {
+        "experiment_name": "joaquin_test_run_naa",
+        "comment": "Adaptive alpha off test",
+        "enemies": [],
+        "h_neurons": 10,
+        "population_size": 50,
+        "n_generations": 15,
+        "parents": 20,
+        "children_per_parent": 4,
+        "mode": "generational",
+        
+        "cx_method": "cxBlend",
+        "cx_kwargs": {"alpha": 0.15},
+        "do_adaptive_alpha": false,
+        "alpha_base": 0.15,
+        "delayed_exp_gen": 10,
+        
+        "mut_probability": 0.25,
+        "mut_method": "mutGaussian",
+        "mut_kwargs": {"mu": 0, "sigma": 4.47, "indpb": 0.697},
+
+        "parent_sel_method": "selNonRepTournament",
+        "parent_sel_kwargs": {"tournsize": 3},
+
+        "survivor_sel_method": "selNonRepTournament",
+        "survivor_sel_kwargs": {"tournsize": 3},
         
         "do_fitshare": false,
         "dist_func": "hamming",

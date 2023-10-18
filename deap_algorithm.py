@@ -13,6 +13,7 @@ import json
 import scipy
 import random
 import numpy as np
+from math import exp
 from operator import attrgetter
 from matplotlib import pyplot as plt
 from datetime import datetime
@@ -163,6 +164,11 @@ class DEAP_Optimiser():
         toolbox.register("evaluate", self.evaluate)
         return toolbox
     
+    def reset_mate_method(self):
+        cx_methods =  {method_name:getattr(tools, method_name) for method_name in all_crossovers}
+        self.toolbox.unregister("mate")
+        self.toolbox.register("mate", cx_methods[self.config['cx_method']], **self.config['cx_kwargs'])
+
     def check_repeats(self, population, where):
         ids = [id(ind) for ind in population]
         vals = [list(ind) for ind in population]
@@ -280,11 +286,24 @@ class DEAP_Optimiser():
 
     def measure_diversity(self, pop):
         """ Measure diversity using Shannon Entropy"""
-        return({'shannon': 0, 
-                'hamming': 0}) 
         weights = np.array([np.array(ind) for ind in pop],dtype=np.float16)
         return({'shannon': self.shannon_entropy(weights), 
                 'hamming': self.hamming_diversity(weights)})            
+
+    def update_alpha(self, g, diversity):
+        """ Dynamically updates the alpha value based on diversity and generation number.
+        
+        The alpha is set according to the following function: 3/(e^x), where x is the shannon entropy 
+        of the population genotype.
+        Base value for alpha is 0.15, which is the value it takes when diversity is maximum (3).
+        Once a certain number of generations have passed, alpha returns to its base value.
+        """
+        if g < self.config['delayed_exp_gen']:
+            self.config['cx_kwargs']['alpha'] = 3/exp(diversity['shannon'])
+        else:
+            self.config['cx_kwargs']['alpha'] = self.config['alpha_base']
+        self.reset_mate_method()
+        
 
     def optimise(self):
         """ Train an algorithm to play EvoMan by using the DEAP framework.
@@ -315,37 +334,14 @@ class DEAP_Optimiser():
                 now = datetime.now()
                 print(f'Gen time: {(now-old_time).total_seconds()}s')
             
-            '''if g%10 == 0:
-                all_enemies = [1,2,3,4,5,6,7,8]
-                if g > 250: 
-                    if self.config['enemies'] != all_enemies:
-                        self.config['enemies'] = all_enemies
-                        print(f'Enemies being set to: {self.config["enemies"]}')
-                        self.env = self.set_env()
-                    else:
-                        pass
-                else:
-                    self.config['enemies'] = list(set(all_enemies)-set(self.config['enemies']))
-                    print(f'Enemies being set to: {self.config["enemies"]}')
-                    self.env = self.set_env()'''
-            if g%10 == 0 and g>4:
-                all_enemies = [1,2,3,4,5,6,7,8]
-                if g > 50: 
-                    if self.config['enemies'] != all_enemies:
-                        self.config['enemies'] = all_enemies
-                        print(f'Enemies being set to: {self.config["enemies"]}')
-                        self.env = self.set_env()
-                    else:
-                        pass
-                else:
-                    if self.config['enemies'] != all_enemies:
-                        self.config['enemies'] = all_enemies
-                    else:
-                        self.config['enemies'] = [1,1]
-                    print(f'Enemies being set to: {self.config["enemies"]}')
-                    self.env = self.set_env()
+            diversity = self.toolbox.measure_diversity(pop)
+
+            if self.config['do_adaptive_alpha']:
+                self.update_alpha(g, diversity)
+
             self.log_gen(g, [ind.non_adj_fitness.values[0] for ind in pop], 
-                         self.toolbox.measure_diversity(pop),
+                         diversity,
+                         self.config['cx_kwargs']['alpha'],
                          max(pop, key=attrgetter('non_adj_fitness')))
 
             # Parent selection | Note: select generates references to the individuals in pop.
@@ -386,15 +382,17 @@ class DEAP_Optimiser():
         return np.max([ind.non_adj_fitness.values[0] for ind in pop]) 
 
 
-    def log_gen(self, n_gen, fitnesses, diversity, best):
+    def log_gen(self, n_gen, fitnesses, diversity, alpha, best):
         """Log fitnesses for current generation in disk."""
         print(f'Mean Fitness for Generation {n_gen}: {np.mean(fitnesses)}.')
         print(f'Mean Diversity for Generation {n_gen}: {diversity}.')
+        print(f'Alpha value for Generation {n_gen}: {alpha}')
         with open(f'./{self.config["experiment_name"]}/fitnesses.json', 'a') as out_file:
             out_file.write(json.dumps({'generation':n_gen, 
                                        'fitnesses': fitnesses, 
                                        'diversity_shannon': diversity['shannon'], 
                                        'diversity_hamming': diversity['hamming'],
+                                       'alpha': alpha,
                                        'best': list(best)}))
             out_file.write("\n")
 
