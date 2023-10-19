@@ -14,14 +14,11 @@ config = ""
 with open('deap_config.json') as json_file:
     config = json.loads(json_file.read())
 
-
 for exp in config['experiments']:
     name = exp['experiment_name']
-    #enemy_sets = {'set_1': [1,2], 'set_2':[2,4,6,7]}
-    enemy_sets = {'set_1': [1,2]}
+    enemy_sets = {'set_1': [2,5], 'set_2':[2,4,6,7]}
     for enemy_set in enemy_sets:
-        #for i in range(10):
-        for i in range(1):
+        for i in range(5):
             exp['enemies'] = enemy_sets[enemy_set]
             exp['experiment_name'] = name + '_e_'+enemy_set+'_r'+str(i)
             optimiser = DEAP_Optimiser(exp)
