@@ -276,7 +276,5 @@ def boxplot():
 #diversity()
 #lineplots()
 #eval_data()
-boxplot()
-
-#table()
-#eval_table_data()
+#boxplot()
+eval_table_data()
