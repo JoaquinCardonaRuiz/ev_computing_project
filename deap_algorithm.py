@@ -88,7 +88,8 @@ class Evaluator():
 
     def run(self):
         f,p,e,t = self.env.play(pcont=np.array(self.config['weights']))
-        return sum(p)-sum(e)
+        return p,e
+        #return sum(p)-sum(e)
         #return sum([1 if enemy==0 else 0 for enemy in e])
 
 class DEAP_Optimiser():

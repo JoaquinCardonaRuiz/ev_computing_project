@@ -128,6 +128,7 @@ def load_data_boxplot(models, models_dirname, enemies, runs):
 
     return data
 
+
 def load_data_diversity(models, models_dirname, enemies, runs):
     data = {}
     for m in models: 
@@ -197,10 +198,9 @@ def eval_table_data():
     enemies = ["set_1","set_2"]
     runs = [str(i) for i in range(10)]
     data = load_data_boxplot(models, models_dirname,enemies,runs)
-    results = {}
+    best={'weights':[],'gain':-800,'found_on':''}
     for m in models:
         for e in enemies:
-            results[f'run_{m}_e_{e}'] = []
             for r in runs:
                 gains = []
                 ev = Evaluator({'run_name': f'run_{m}_e_{e}_r{r}', 
@@ -208,14 +208,23 @@ def eval_table_data():
                                 'h_neurons': 10,
                                 'weights': data[m][e][r]})
                 for i in range(5):
-                    g = ev.run()
-                    gains.append(g)
-                results[f'run_{m}_e_{e}'].append(np.mean(gains))
-    with open('boxplot_results.json', 'a') as file:
-        file.write(json.dumps(results))
-
-def table():
-    pass
+                    ply,enm = ev.run()
+                    gains.append(sum(ply)-sum(enm))
+                individual_gain = np.mean(gains)
+                if individual_gain >= best['gain']:
+                    print(f'new best gain: {individual_gain}')
+                    best['gain'] = individual_gain
+                    best['weights'] = data[m][e][r]
+                    best['found_on'] = f'{m}{e}{r}'
+    results = []
+    for i in range(5):
+        ev = Evaluator({'run_name': f'run_best_of_best', 
+                        'enemies': [1,2,3,4,5,6,7,8],
+                        'h_neurons': 10,
+                        'weights': best['weights']})
+        results.append(ev.run())
+    print(best)
+    print(results)
 
 def eval_data():
     models = ["Model 1", "Model 2"]
@@ -234,8 +243,8 @@ def eval_data():
                                 'h_neurons': 10,
                                 'weights': data[m][e][r]})
                 for i in range(5):
-                    g = ev.run()
-                    gains.append(g)
+                    ply,enm = ev.run()
+                    gains.append(sum(ply)-sum(enm))
                 results[f'run_{m}_e_{e}'].append(np.mean(gains))
     with open('boxplot_results.json', 'a') as file:
         file.write(json.dumps(results))
@@ -265,8 +274,9 @@ def boxplot():
     plt.show()
 
 diversity()
-lineplots()
+#lineplots()
 #eval_data()
 #boxplot()
 
 #table()
+#eval_table_data()
