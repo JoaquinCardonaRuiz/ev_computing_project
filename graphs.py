@@ -264,9 +264,9 @@ def boxplot():
     sns.boxplot(x=df['Experiment'], y=df['Gain'],hue=df['Model'],palette=list(models_colours.values()), medianprops=dict(color="darkgrey"))
     plt.show()
 
-#diversity()
-#boxplot()
-#lineplots()
+diversity()
+lineplots()
 #eval_data()
+#boxplot()
 
-table()
+#table()
