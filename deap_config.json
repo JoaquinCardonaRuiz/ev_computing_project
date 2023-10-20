@@ -66,5 +66,73 @@
         "dist_func": "hamming",
         "fitshare_radius": 100,
         "fitshare_strength": 1
+    },
+    {
+        "experiment_name": "generalist_naa_hm",
+        "comment": "Adaptive alpha off test",
+        "enemies": [],
+        "h_neurons": 10,
+        "population_size": 100,
+        "n_generations": 75,
+        "parents": 50,
+        "children_per_parent": 4,
+        "mode": "generational",
+        
+        "cx_method": "cxBlend",
+        "cx_kwargs": {"alpha": 0.25},
+        "do_adaptive_alpha": false,
+        "alpha_base": 0.1,
+        "div_bias": 1,
+        "div_threshold": 2.1,
+        "delayed_exp_gen": 25,
+        
+        "mut_probability": 0.1,
+        "mut_method": "mutGaussian",
+        "mut_kwargs": {"mu": 0, "sigma": 4, "indpb": 0.4},
+
+        "parent_sel_method": "selNonRepTournament",
+        "parent_sel_kwargs": {"tournsize": 12},
+
+        "survivor_sel_method": "selNonRepTournament",
+        "survivor_sel_kwargs": {"tournsize": 12},
+        
+        "do_fitshare": false,
+        "dist_func": "hamming",
+        "fitshare_radius": 100,
+        "fitshare_strength": 1
+    },
+    {
+        "experiment_name": "generalist_aa_hm",
+        "comment": "Adaptive alpha off test",
+        "enemies": [],
+        "h_neurons": 10,
+        "population_size": 100,
+        "n_generations": 75,
+        "parents": 50,
+        "children_per_parent": 4,
+        "mode": "generational",
+        
+        "cx_method": "cxBlend",
+        "cx_kwargs": {"alpha": 0.25},
+        "do_adaptive_alpha": true,
+        "alpha_base": 0.1,
+        "div_bias": 0.9,
+        "div_threshold": 2.3,
+        "delayed_exp_gen": 25,
+        
+        "mut_probability": 0.1,
+        "mut_method": "mutGaussian",
+        "mut_kwargs": {"mu": 0, "sigma": 4, "indpb": 0.4},
+
+        "parent_sel_method": "selNonRepTournament",
+        "parent_sel_kwargs": {"tournsize": 12},
+
+        "survivor_sel_method": "selNonRepTournament",
+        "survivor_sel_kwargs": {"tournsize": 12},
+        
+        "do_fitshare": false,
+        "dist_func": "hamming",
+        "fitshare_radius": 100,
+        "fitshare_strength": 1
     }
 ]}
